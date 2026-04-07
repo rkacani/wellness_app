@@ -12,5 +12,5 @@ export default function Home() {
         test();
     }, []);
 
-    return <div>Check console 👀</div>;
+    return <div>Check console! 👀</div>;
 }
