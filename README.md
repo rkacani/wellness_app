@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a "Wellness and Training Companion" app.
+
+Goals of the project include:
+
+• Development of a user-friendly app to promote health, fitness, and well-being
+
+• Provision of tools for planning and managing workouts and training plans
+
+• Timers and exercise guidance during workouts
+
+• Integration of a system for tracking daily habits (e.g., water intake, sleep, exercise)
+
+• Increased motivation through reminders and progress indicators
 
 ## Getting Started
 
@@ -16,21 +28,25 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technologies Used
+- **Next.js**: A React framework for building server-side rendered applications.
+- **[Supabase](https://supabase.com/)**: An open-source Firebase alternative for backend services.
+- **Tailwind CSS**: A utility-first CSS framework for styling.
+- **[Vercel](https://vercel.com/)**: A platform for deploying Next.js applications.
+- **PWA**: Progressive Web App features for offline support and improved performance.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Process
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Next.js installation
+- npx create-next-app@latest wellness-app
+- npm install
+- npm run dev
+### Supabase setup
+- npm install @supabase/supabase-js
+- create .env.local with
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=your_url
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+  ```
+### PWA setup
+- npm install next-pwa
