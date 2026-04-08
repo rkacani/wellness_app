@@ -28,6 +28,8 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+The app is deployed on Vercel and can be accessed at [https://wellness-app-pi.vercel.app/](https://wellness-app-pi.vercel.app/).
+
 ## Technologies Used
 - **Next.js**: A React framework for building server-side rendered applications.
 - **[Supabase](https://supabase.com/)**: An open-source Firebase alternative for backend services.
