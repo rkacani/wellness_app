@@ -30,6 +30,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 The app is deployed on Vercel and can be accessed at [https://wellness-app-pi.vercel.app/](https://wellness-app-pi.vercel.app/).
 
+Whenever it is pushed or merged to the main branch, it will be automatically deployed. Other branches do not trigger a deployment, so you can work on features without affecting the live app.
+
 ## Technologies Used
 - **Next.js**: A React framework for building server-side rendered applications.
 - **[Supabase](https://supabase.com/)**: An open-source Firebase alternative for backend services.
