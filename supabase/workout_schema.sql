@@ -1,0 +1,122 @@
+--This SQL script sets up the database schema for a workout application, including tables for week programs and exercises, as well as row-level security policies to ensure that users can only access their own data.
+
+create extension if not exists pgcrypto;
+
+create table if not exists public.week_programs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.exercises (
+  id uuid primary key default gen_random_uuid(),
+  program_id uuid not null references public.week_programs(id) on delete cascade,
+  day_of_week text not null check (
+    day_of_week in ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
+  ),
+  rank integer not null default 0,
+  name text not null,
+  duration_seconds integer not null check (duration_seconds > 0),
+  sets integer not null check (sets > 0),
+  rest_seconds integer not null check (rest_seconds >= 0),
+  weight_kg numeric(6,2),
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_week_programs_user 
+  on public.week_programs(user_id);
+
+create index if not exists idx_exercises_program_day_rank 
+  on public.exercises(program_id, day_of_week, rank);
+
+alter table public.week_programs enable row level security;
+alter table public.exercises enable row level security;
+
+-- WEEK PROGRAM POLICIES
+drop policy if exists "Users read own programs" on public.week_programs;
+create policy "Users read own programs"
+on public.week_programs
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users insert own programs" on public.week_programs;
+create policy "Users insert own programs"
+on public.week_programs
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users update own programs" on public.week_programs;
+create policy "Users update own programs"
+on public.week_programs
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users delete own programs" on public.week_programs;
+create policy "Users delete own programs"
+on public.week_programs
+for delete
+using (auth.uid() = user_id);
+
+-- EXERCISES POLICIES
+drop policy if exists "Users read own exercises" on public.exercises;
+create policy "Users read own exercises"
+on public.exercises
+for select
+using (
+  exists (
+    select 1
+    from public.week_programs wp
+    where wp.id = exercises.program_id
+      and wp.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "Users insert own exercises" on public.exercises;
+create policy "Users insert own exercises"
+on public.exercises
+for insert
+with check (
+  exists (
+    select 1
+    from public.week_programs wp
+    where wp.id = exercises.program_id
+      and wp.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "Users update own exercises" on public.exercises;
+create policy "Users update own exercises"
+on public.exercises
+for update
+using (
+  exists (
+    select 1
+    from public.week_programs wp
+    where wp.id = exercises.program_id
+      and wp.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.week_programs wp
+    where wp.id = exercises.program_id
+      and wp.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "Users delete own exercises" on public.exercises;
+create policy "Users delete own exercises"
+on public.exercises
+for delete
+using (
+  exists (
+    select 1
+    from public.week_programs wp
+    where wp.id = exercises.program_id
+      and wp.user_id = auth.uid()
+  )
+);

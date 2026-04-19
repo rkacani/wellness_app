@@ -54,3 +54,7 @@ Whenever it is pushed or merged to the main branch, it will be automatically dep
   ```
 ### PWA setup
 - npm install next-pwa
+
+
+## Others
+Run the queries in supabase/workout_schema.sql to create the necessary tables in your Supabase database.

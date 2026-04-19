@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../src/lib/supabase';
+import { supabase } from '@/src/lib/supabase';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -107,7 +107,8 @@ export async function POST(req: Request) {
               return NextResponse.json({
                 user: retry.data.user ?? null,
                 session: retry.data.session ?? null,
-                email: retry.data.user?.email
+                email: retry.data.user?.email,
+                userId: retry.data.user?.id
               }, { status: 200 });
             } else {
               console.error('Failed to confirm user via admin', { status: updRes.status });
@@ -127,7 +128,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       user: data.user ?? null,
       session: data.session ?? null,
-      email: data.user?.email
+      email: data.user?.email,
+      userId: data.user?.id
     }, { status: 200 });
   } catch (err) {
     console.error('Login server error:', err);

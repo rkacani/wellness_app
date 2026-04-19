@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type ErrorType = "error" | "success" | "info" | null;
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<ErrorType>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [message, setMessage] = React.useState<string | null>(null);
+  const [messageType, setMessageType] = React.useState<ErrorType>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const getErrorMessage = (code: string, defaultMsg: string): string => {
     const errorMap: Record<string, string> = {
@@ -51,14 +53,20 @@ export default function LoginPage() {
         setMessage(errorMsg);
         setMessageType('error');
       } else {
+        localStorage.setItem(
+          "wellness-auth-user",
+          JSON.stringify({
+            id: data.userId,
+            email: data.email || email.toLowerCase(),
+          })
+        );
         setMessage(`Welcome back! You're logged in as ${data.email}`);
         setMessageType('success');
         setEmail("");
         setPassword("");
-        // Optionally redirect after successful login
         setTimeout(() => {
-          // window.location.href = '/dashboard';
-        }, 1500);
+          router.push('/dashboard');
+        }, 300);
       }
     } catch (err) {
       setMessage('Network error. Please check your connection and try again.');
