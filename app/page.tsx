@@ -1,16 +1,6 @@
-'use client';
-
-import { supabase } from '../src/lib/supabase';
-import { useEffect } from 'react';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-    useEffect(() => {
-        const test = async () => {
-            const { data, error } = await supabase.from('test').select('*');
-            console.log(data, error);
-        };
-        test();
-    }, []);
-
-    return <div>Check console 👀</div>;
+  // Redirect root to the login page
+  redirect('/login');
 }
