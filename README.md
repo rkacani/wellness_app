@@ -38,6 +38,7 @@ Whenever it is pushed or merged to the main branch, it will be automatically dep
 - **Tailwind CSS**: A utility-first CSS framework for styling.
 - **[Vercel](https://vercel.com/)**: A platform for deploying Next.js applications.
 - **PWA**: Progressive Web App features for offline support and improved performance.
+- https://gymvisual.com/ to get the exercise gifs.
 
 ## Process
 

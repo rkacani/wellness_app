@@ -141,6 +141,7 @@ export default function DashboardPage() {
 
   const [newProgramName, setNewProgramName] = React.useState("");
   const [renameProgramName, setRenameProgramName] = React.useState("");
+  const [isRenameInputFocused, setIsRenameInputFocused] = React.useState(false);
   const [showProgramForm, setShowProgramForm] = React.useState(false);
 
   const [exerciseName, setExerciseName] = React.useState("");
@@ -902,6 +903,31 @@ export default function DashboardPage() {
                   Delete current program
                 </button>
               )}
+              {selectedProgram && (
+                <>
+                  <input
+                    className="form-input text-xs sm:text-sm"
+                    value={renameProgramName || selectedProgram?.name}
+                    onChange={(e) => setRenameProgramName(e.target.value)}
+                    placeholder={selectedProgram?.name || "New name"}
+                    disabled={!selectedProgram}
+                    onFocus={() => setIsRenameInputFocused(true)}
+                    onBlur={() => setIsRenameInputFocused(false)}
+                  />
+                  <button
+                    className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                      isRenameInputFocused
+                        ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                    }`}
+                    onClick={handleRenameProgram}
+                    disabled={!selectedProgram || !renameProgramName.trim() || renameProgramName === selectedProgram.name}
+                    title="Rename the current program"
+                  >
+                    ✓ Rename
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -911,60 +937,9 @@ export default function DashboardPage() {
       <main className="container-responsive py-4 md:py-6">
         <div className="space-y-4 md:space-y-6">
           {/* Programs & Main Content */}
-          <div className="grid gap-4 md:gap-6 lg:grid-cols-[280px_1fr]">
-            {/* Sidebar */}
-            <aside
-              className={`${
-                isSidebarOpen ? "block" : "hide-mobile"
-              } card max-w-none rounded-lg md:sticky md:top-24 md:max-h-screen md:overflow-y-auto`}
-            >
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-semibold md:text-lg">Program Actions</h3>
-                  <p className="text-xs-muted mt-1 text-xs">Scoped to: {authUser.email}</p>
-                </div>
-
-                <details
-                  className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/30"
-                  open
-                >
-                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Rename or delete
-                  </summary>
-                  <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 dark:border-slate-700">
-                    <label className="form-label text-xs">Rename selected</label>
-                    <input
-                      className="form-input text-xs sm:text-sm"
-                      value={renameProgramName}
-                      onChange={(e) => setRenameProgramName(e.target.value)}
-                      placeholder={selectedProgram?.name || "No program selected"}
-                      disabled={!selectedProgram}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        className="btn btn-secondary text-xs sm:text-sm"
-                        onClick={handleRenameProgram}
-                        disabled={!selectedProgram}
-                      >
-                        Rename
-                      </button>
-                      <button
-                        className="btn bg-rose-500 text-xs text-white hover:bg-rose-600 disabled:opacity-40 sm:text-sm"
-                        onClick={handleDeleteProgram}
-                        disabled={!selectedProgram}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </details>
-
-              </div>
-            </aside>
-            {/* Main Content */}
-            <div className="space-y-4 md:space-y-6">
-              {/* Weekly Calendar */}
-              <section className="card-lg max-w-none">
+          <div className="space-y-4 md:space-y-6">
+            {/* Weekly Calendar */}
+            <section className="card-lg max-w-none">
                 <div className="mb-3 md:mb-4">
                   <h2 className="text-base font-semibold md:text-lg">
                     {selectedProgram?.name || "No Program"} · Weekly Calendar
@@ -1136,7 +1111,6 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </section>
-            </div>
           </div>
         </div>
       </main>
