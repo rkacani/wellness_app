@@ -16,12 +16,17 @@ export async function POST(req: Request, { params }: Params) {
     const restSeconds = body?.restSeconds as number | undefined;
     const weightKg = body?.weightKg as number | null | undefined;
     const notes = body?.notes as string | undefined;
+    const exerciseTypeId = body?.exerciseTypeId as string | undefined;
+
+    console.log("[POST /api/programs/:programId/exercises] programId:", programId, "userId:", userId, "dayOfWeek:", dayOfWeek, "name:", name);
 
     if (!userId || !dayOfWeek || !name?.trim()) {
+      console.log("[POST /api/programs/:programId/exercises] Missing required fields");
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     if (!Number.isFinite(durationSeconds) || !Number.isFinite(sets) || !Number.isFinite(restSeconds)) {
+      console.log("[POST /api/programs/:programId/exercises] Invalid numeric values: durationSeconds=", durationSeconds, "sets=", sets, "restSeconds=", restSeconds);
       return NextResponse.json({ error: "Invalid numeric values" }, { status: 400 });
     }
 
@@ -31,15 +36,22 @@ export async function POST(req: Request, { params }: Params) {
 
     const supabase = getSupabaseService();
 
-    const { data: ownership, error: ownershipError } = await supabase
+    // First, check if program exists
+    const { data: allPrograms, error: checkError } = await supabase
       .from("week_programs")
-      .select("id")
-      .eq("id", programId)
-      .eq("user_id", userId)
-      .single();
+      .select("id, user_id")
+      .eq("id", programId);
 
-    if (ownershipError || !ownership) {
-      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    console.log("[POST /api/programs/:programId/exercises] All programs check - error:", checkError, "data:", allPrograms);
+
+    // Then check ownership - verify the program exists and belongs to this user
+    const ownership = allPrograms?.find((p) => p.user_id === userId);
+
+    console.log("[POST /api/programs/:programId/exercises] ownership check - ownership:", ownership, "expected userId:", userId);
+
+    if (!ownership) {
+      console.log("[POST /api/programs/:programId/exercises] Program not found or access denied");
+      return NextResponse.json({ error: "Program not found or access denied" }, { status: 404 });
     }
 
     const { data: existing, error: countError } = await supabase
@@ -51,6 +63,7 @@ export async function POST(req: Request, { params }: Params) {
       .limit(1);
 
     if (countError) {
+      console.log("[POST /api/programs/:programId/exercises] Count error:", countError);
       return NextResponse.json({ error: countError.message }, { status: 500 });
     }
 
@@ -63,18 +76,22 @@ export async function POST(req: Request, { params }: Params) {
         day_of_week: dayOfWeek,
         rank,
         name: name.trim(),
+        exercise_type_id: exerciseTypeId ?? null,
         duration_seconds: safeDurationSeconds,
         sets: safeSets,
         rest_seconds: safeRestSeconds,
         weight_kg: weightKg ?? null,
         notes: notes?.trim() || null,
       })
-      .select("id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes")
+      .select("id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes, exercise_type_id")
       .single();
 
     if (error) {
+      console.log("[POST /api/programs/:programId/exercises] Insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log("[POST /api/programs/:programId/exercises] Exercise created:", data.id);
 
     return NextResponse.json(
       {
@@ -82,6 +99,7 @@ export async function POST(req: Request, { params }: Params) {
         dayOfWeek: data.day_of_week,
         rank: data.rank,
         name: data.name,
+        exerciseTypeId: data.exercise_type_id ?? null,
         durationSec: data.duration_seconds,
         sets: data.sets,
         restSec: data.rest_seconds,
@@ -90,7 +108,9 @@ export async function POST(req: Request, { params }: Params) {
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("[POST /api/programs/:programId/exercises] Exception:", errorMsg, error);
     return NextResponse.json({ error: "Failed to create exercise" }, { status: 500 });
   }
 }

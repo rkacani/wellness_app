@@ -102,10 +102,13 @@ export default function SignUpPage() {
   return (
     <div className="app-shell">
       <div className="card">
-        <h1 className="text-center mb-2">Create Account</h1>
-        <p className="text-sm-muted text-center mb-6">Join our wellness community</p>
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-500">Get started</p>
+          <h1 className="mt-2 text-lg font-semibold sm:text-2xl">Create account</h1>
+          <p className="text-sm-muted mt-2">Join our wellness community</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="form-group">
             <label className="form-label">Full Name</label>
             <input
@@ -164,7 +167,7 @@ export default function SignUpPage() {
             disabled={isLoading}
             className="btn btn-primary"
           >
-            {isLoading ? 'Creating Account...' : 'Sign Up'}
+            {isLoading ? 'Creating...' : 'Create account'}
           </button>
         </form>
 
@@ -176,8 +179,8 @@ export default function SignUpPage() {
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 text-center">
-          <p className="text-sm-muted mb-2">Already have an account?</p>
+        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700 text-center">
+          <p className="text-xs text-sm-muted mb-2 sm:text-sm">Already have an account?</p>
           <Link href="/login" className="link link-underline font-medium">
             Log in
           </Link>

@@ -17,11 +17,20 @@ type Exercise = {
   id: string;
   rank?: number;
   name: string;
+  exerciseTypeId?: string | null;
+  exerciseTypeName?: string | null;
+  exerciseMediaUrl?: string | null;
   durationSec: number;
   sets: number;
   restSec: number;
   weightKg?: number | null;
   notes?: string;
+};
+
+type ExerciseType = {
+  id: string;
+  name: string;
+  mediaUrl?: string | null;
 };
 
 type WeekProgram = {
@@ -36,6 +45,7 @@ type SessionState = {
   setNumber: number;
   remainingSec: number;
   quote: string;
+  paused?: boolean;
 };
 
 type AuthUser = {
@@ -120,14 +130,23 @@ export default function DashboardPage() {
   );
 
   const [isLoadingData, setIsLoadingData] = React.useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [programs, setPrograms] = React.useState<WeekProgram[]>([]);
   const [selectedProgramId, setSelectedProgramId] = React.useState<string>("");
-  const [selectedDay, setSelectedDay] = React.useState<DayName>("Monday");
+  const [selectedDay, setSelectedDay] = React.useState<DayName>(() => {
+    const todayIndex = new Date().getDay();
+    const map: DayName[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return map[todayIndex] ?? "Monday";
+  });
 
   const [newProgramName, setNewProgramName] = React.useState("");
   const [renameProgramName, setRenameProgramName] = React.useState("");
+  const [showProgramForm, setShowProgramForm] = React.useState(false);
 
   const [exerciseName, setExerciseName] = React.useState("");
+  const [exerciseTypes, setExerciseTypes] = React.useState<ExerciseType[]>([]);
+  const [selectedExerciseTypeId, setSelectedExerciseTypeId] = React.useState<string>("");
+  const [showExerciseForm, setShowExerciseForm] = React.useState(false);
   const [durationMinutes, setDurationMinutes] = React.useState(0);
   const [durationSeconds, setDurationSeconds] = React.useState(45);
   const [sets, setSets] = React.useState(3);
@@ -195,14 +214,32 @@ export default function DashboardPage() {
   }, [authUser, router]);
 
   React.useEffect(() => {
+    if (!authUser) {
+      return;
+    }
+
+    const loadExerciseTypes = async () => {
+      const res = await fetch("/api/exercise-types");
+      if (!res.ok) {
+        return;
+      }
+
+      const data = (await res.json()) as ExerciseType[];
+      setExerciseTypes(Array.isArray(data) ? data : []);
+    };
+
+    void loadExerciseTypes();
+  }, [authUser]);
+
+  React.useEffect(() => {
     if (!session) {
       return;
     }
 
     const timer = setInterval(() => {
       setSession((prev) => {
-        if (!prev) {
-          return null;
+        if (!prev || prev.paused) {
+          return prev;
         }
 
         if (prev.remainingSec > 1) {
@@ -215,7 +252,39 @@ export default function DashboardPage() {
         }
 
         if (prev.phase === "work") {
-          if (prev.setNumber < currentExercise.sets && currentExercise.restSec > 0) {
+          // Check if this is the last set
+          if (prev.setNumber >= currentExercise.sets) {
+            // Last set completed - show rest time before next exercise if available
+            if (currentExercise.restSec > 0) {
+              return {
+                ...prev,
+                phase: "rest",
+                remainingSec: currentExercise.restSec,
+                quote: getQuoteBySeed(prev.exerciseIndex + prev.setNumber),
+              };
+            }
+            // No rest time - move to next exercise
+            const nextExerciseIndex = prev.exerciseIndex + 1;
+            if (nextExerciseIndex < dayExercises.length) {
+              const nextExercise = dayExercises[nextExerciseIndex];
+              return {
+                ...prev,
+                exerciseIndex: nextExerciseIndex,
+                phase: "work",
+                setNumber: 1,
+                remainingSec: nextExercise.durationSec,
+                quote: getQuoteBySeed(nextExerciseIndex),
+              };
+            }
+            // All exercises done - pause
+            return {
+              ...prev,
+              paused: true,
+            };
+          }
+
+          // Not the last set - show rest time
+          if (currentExercise.restSec > 0) {
             return {
               ...prev,
               phase: "rest",
@@ -224,26 +293,45 @@ export default function DashboardPage() {
             };
           }
 
-          if (prev.setNumber < currentExercise.sets) {
-            return {
-              ...prev,
-              phase: "work",
-              setNumber: prev.setNumber + 1,
-              remainingSec: currentExercise.durationSec,
-              quote: getQuoteBySeed(prev.exerciseIndex + prev.setNumber + 1),
-            };
-          }
-
-          setNextExerciseIndex(Math.min(prev.exerciseIndex + 1, Math.max(0, dayExercises.length - 1)));
-          return null;
+          // No rest time - start next set
+          return {
+            ...prev,
+            phase: "work",
+            setNumber: prev.setNumber + 1,
+            remainingSec: currentExercise.durationSec,
+            quote: getQuoteBySeed(prev.exerciseIndex + prev.setNumber + 1),
+          };
         }
 
+        // Rest phase complete
+        // Check if we need to move to next exercise
+        if (prev.setNumber >= currentExercise.sets) {
+          const nextExerciseIndex = prev.exerciseIndex + 1;
+          if (nextExerciseIndex < dayExercises.length) {
+            const nextExercise = dayExercises[nextExerciseIndex];
+            return {
+              ...prev,
+              exerciseIndex: nextExerciseIndex,
+              phase: "work",
+              setNumber: 1,
+              remainingSec: nextExercise.durationSec,
+              quote: getQuoteBySeed(nextExerciseIndex),
+            };
+          }
+          // All exercises done - pause
+          return {
+            ...prev,
+            paused: true,
+          };
+        }
+
+        // Start next set of same exercise
         return {
           ...prev,
           phase: "work",
           setNumber: prev.setNumber + 1,
           remainingSec: currentExercise.durationSec,
-          quote: getQuoteBySeed(prev.exerciseIndex + prev.setNumber + 2),
+          quote: getQuoteBySeed(prev.exerciseIndex + prev.setNumber + 1),
         };
       });
     }, 1000);
@@ -253,6 +341,7 @@ export default function DashboardPage() {
 
   const resetExerciseForm = () => {
     setExerciseName("");
+    setSelectedExerciseTypeId("");
     setDurationMinutes(0);
     setDurationSeconds(45);
     setSets(3);
@@ -261,6 +350,21 @@ export default function DashboardPage() {
     setWeightKg("");
     setNotes("");
     setEditingExerciseId(null);
+    setShowExerciseForm(false);
+  };
+
+  const openNewExerciseForm = () => {
+    setExerciseName("");
+    setSelectedExerciseTypeId("");
+    setDurationMinutes(0);
+    setDurationSeconds(45);
+    setSets(3);
+    setRestMinutes(0);
+    setRestSeconds(20);
+    setWeightKg("");
+    setNotes("");
+    setEditingExerciseId(null);
+    setShowExerciseForm(true);
   };
 
   const handleAddProgram = async () => {
@@ -280,6 +384,7 @@ export default function DashboardPage() {
 
     const created = (await res.json()) as WeekProgram;
     setNewProgramName("");
+    setShowProgramForm(false);
     await loadPrograms(created.id);
   };
 
@@ -330,9 +435,13 @@ export default function DashboardPage() {
   };
 
   const handleAddOrUpdateExercise = async () => {
-    if (!authUser || !selectedProgram || !exerciseName.trim()) {
+    if (!authUser || !selectedProgram || !selectedProgram.id || !exerciseName.trim()) {
       return;
     }
+
+    // Debug: log the selected program and user
+    console.log("DEBUG: selectedProgram:", selectedProgram);
+    console.log("DEBUG: authUser.id:", authUser.id);
 
     const totalDurationSeconds = Math.floor(durationMinutes) * 60 + Math.floor(durationSeconds);
     const totalRestSeconds = Math.floor(restMinutes) * 60 + Math.floor(restSeconds);
@@ -341,10 +450,16 @@ export default function DashboardPage() {
       return;
     }
 
+    const resolvedName = exerciseName.trim();
+    if (!resolvedName) {
+      return;
+    }
+
     const payload = {
       userId: authUser.id,
       dayOfWeek: selectedDay,
-      name: exerciseName.trim(),
+      name: resolvedName,
+      exerciseTypeId: selectedExerciseTypeId || null,
       durationSeconds: totalDurationSeconds,
       sets,
       restSeconds: totalRestSeconds,
@@ -365,6 +480,9 @@ export default function DashboardPage() {
     });
 
     if (!res.ok) {
+      const errorData = await res.json();
+      console.error("Exercise creation error:", res.status, errorData);
+      alert(`Error: ${errorData?.error || 'Failed to save exercise'}`);
       return;
     }
 
@@ -378,6 +496,7 @@ export default function DashboardPage() {
 
     setEditingExerciseId(exercise.id);
     setExerciseName(exercise.name);
+    setSelectedExerciseTypeId(exercise.exerciseTypeId ?? "");
     setDurationMinutes(durationSplit.minutes);
     setDurationSeconds(durationSplit.seconds);
     setSets(exercise.sets);
@@ -385,6 +504,7 @@ export default function DashboardPage() {
     setRestSeconds(restSplit.seconds);
     setWeightKg(exercise.weightKg == null ? "" : String(exercise.weightKg));
     setNotes(exercise.notes || "");
+    setShowExerciseForm(true);
   };
 
   const handleDeleteExercise = async (exerciseId: string, exerciseNameLabel: string) => {
@@ -475,7 +595,22 @@ export default function DashboardPage() {
       setNumber: 1,
       remainingSec: exercise.durationSec,
       quote: getQuoteBySeed(index),
+      paused: false,
     });
+  };
+
+  const handlePauseResume = () => {
+    setSession((prev) => {
+      if (!prev) {
+        return null;
+      }
+      return { ...prev, paused: !prev.paused };
+    });
+  };
+
+  const handleEndExercise = () => {
+    setNextExerciseIndex(0);
+    setSession(null);
   };
 
   const logout = () => {
@@ -506,321 +641,505 @@ export default function DashboardPage() {
   const selectedSchedule = selectedProgram?.schedule ?? emptySchedule();
 
   return (
-    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="card-lg max-w-none bg-gradient-to-r from-sky-500 to-indigo-600 text-white">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl">Workout Dashboard</h1>
-              <p className="mt-2 text-sm text-sky-100">Manage weekly plans, day exercises and guided timers.</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      {showProgramForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">New Program</p>
+                <h3 className="text-base font-semibold">Create weekly plan</h3>
+              </div>
+              <button className="btn btn-secondary text-xs" onClick={() => setShowProgramForm(false)}>
+                Close
+              </button>
             </div>
-            <div className="flex gap-3">
-              <Link href="/login" className="btn bg-white/15 px-4 py-2 text-white hover:bg-white/25">
-                Back
-              </Link>
-              <button className="btn bg-white px-4 py-2 text-slate-900" onClick={logout}>
-                Logout
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="form-label">Program name</label>
+                <input
+                  className="form-input text-sm"
+                  value={newProgramName}
+                  onChange={(e) => setNewProgramName(e.target.value)}
+                  placeholder="Morning strength"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                className="btn btn-secondary text-xs sm:text-sm"
+                onClick={handleAddProgram}
+                disabled={!newProgramName.trim()}
+              >
+                Create Program
+              </button>
+              <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowProgramForm(false)}>
+                Cancel
               </button>
             </div>
           </div>
-        </header>
-
-        <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <aside className="card max-w-none">
-            <h3>Week Programs</h3>
-            <p className="text-sm-muted mb-4">All data is scoped to: {authUser.email}</p>
-
-            <div className="space-y-2">
-              {programs.map((program) => (
-                <button
-                  key={program.id}
-                  onClick={() => {
-                    setSelectedProgramId(program.id);
-                    setSession(null);
-                    setNextExerciseIndex(0);
-                  }}
-                  className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-smooth ${
-                    selectedProgram?.id === program.id
-                      ? "border-sky-500 bg-sky-50 dark:bg-sky-900/30"
-                      : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
-                  }`}
-                >
-                  {program.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <label className="form-label">New program name</label>
-              <input
-                className="form-input"
-                value={newProgramName}
-                onChange={(e) => setNewProgramName(e.target.value)}
-                placeholder="Strength Week A"
-              />
-              <button className="btn btn-secondary" onClick={handleAddProgram}>
-                Add Program
+        </div>
+      )}
+      {showExerciseForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add Exercise</p>
+                <h3 className="text-base font-semibold">{selectedDay}</h3>
+              </div>
+              <button className="btn btn-secondary text-xs" onClick={resetExerciseForm}>
+                Close
               </button>
             </div>
 
-            <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
-              <label className="form-label">Rename selected program</label>
-              <input
-                className="form-input"
-                value={renameProgramName}
-                onChange={(e) => setRenameProgramName(e.target.value)}
-                placeholder={selectedProgram?.name || "No selected program"}
-                disabled={!selectedProgram}
-              />
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button className="btn btn-secondary" onClick={handleRenameProgram} disabled={!selectedProgram}>
-                  Rename
-                </button>
-                <button
-                  className="btn bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-40"
-                  onClick={handleDeleteProgram}
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="form-label">Exercise type</label>
+                <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+                  <select
+                    className="form-select text-sm"
+                    value={selectedExerciseTypeId}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedExerciseTypeId(value);
+                      const selected = exerciseTypes.find((item) => item.id === value);
+                      setExerciseName(selected?.name ?? "");
+                    }}
+                    disabled={!selectedProgram}
+                  >
+                    <option value="">-- Select --</option>
+                    {exerciseTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
+                    {exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ? (
+                      <img
+                        src={exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ?? ""}
+                        alt="Exercise preview"
+                        className="h-20 w-full rounded-md object-cover"
+                      />
+                    ) : (
+                      "Preview"
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Custom name</label>
+                <input
+                  className="form-input text-sm"
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
+                  placeholder="Optional display name"
                   disabled={!selectedProgram}
-                >
-                  Delete
-                </button>
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Duration</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    className="form-input text-sm"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                    placeholder="Min"
+                    disabled={!selectedProgram}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="form-input text-sm"
+                    value={durationSeconds}
+                    onChange={(e) => setDurationSeconds(Number(e.target.value))}
+                    placeholder="Sec"
+                    disabled={!selectedProgram}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Rest between sets</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    className="form-input text-sm"
+                    value={restMinutes}
+                    onChange={(e) => setRestMinutes(Number(e.target.value))}
+                    placeholder="Min"
+                    disabled={!selectedProgram}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="form-input text-sm"
+                    value={restSeconds}
+                    onChange={(e) => setRestSeconds(Number(e.target.value))}
+                    placeholder="Sec"
+                    disabled={!selectedProgram}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="form-label">Sets</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className="form-input text-sm"
+                    value={sets}
+                    onChange={(e) => setSets(Number(e.target.value))}
+                    disabled={!selectedProgram}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Weight (kg)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.5"
+                    className="form-input text-sm"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                    placeholder="Optional"
+                    disabled={!selectedProgram}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Notes (optional)</label>
+                <textarea
+                  className="form-textarea text-sm"
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Controlled movement"
+                  disabled={!selectedProgram}
+                />
               </div>
             </div>
-          </aside>
 
-          <main className="space-y-6">
-            <div className="card-lg max-w-none">
-              <div className="mb-4 flex items-center justify-between">
-                <h3>{selectedProgram?.name || "No Program Selected"} · Weekly Calendar</h3>
-                <span className="text-sm-muted">Click a day to manage exercises</span>
+            <div className="mt-5 flex gap-2">
+              <button
+                className="btn btn-secondary text-xs sm:text-sm"
+                onClick={handleAddOrUpdateExercise}
+                disabled={!selectedProgram}
+              >
+                {editingExerciseId ? "Update Exercise" : "Add Exercise"}
+              </button>
+              <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-lg">
+        <div className="container-responsive py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-lg font-bold md:text-2xl">Workout Dashboard</h1>
+              <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
+            </div>
+            <button
+              className="btn bg-white/20 px-2 py-1 text-xs font-medium text-white hover:bg-white/30"
+              onClick={logout}
+              title="Logout"
+            >
+              Logout
+            </button>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <span className="text-xs font-medium text-sky-100">Select program:</span>
+            <div className="flex flex-wrap gap-2">
+              {programs.length > 0 ? (
+                <select
+                  className="form-select text-xs sm:text-sm"
+                  value={selectedProgram?.id ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedProgramId(value);
+                    setSession(null);
+                    setNextExerciseIndex(0);
+                  }}
+                >
+                  {programs.map((program) => (
+                    <option key={program.id} value={program.id}>
+                      {program.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-xs text-sky-100 sm:text-sm">No programs created</span>
+              )}
+              <button
+                className="rounded-md bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 sm:text-sm"
+                onClick={() => setShowProgramForm(true)}
+                title="Create a new workout program"
+              >
+                + New program
+              </button>
+              {selectedProgram && (
+                <button
+                  className="rounded-md bg-rose-100 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50 sm:text-sm"
+                  onClick={() => void handleDeleteProgram()}
+                  title="Delete the current program"
+                >
+                  Delete current program
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container-responsive py-4 md:py-6">
+        <div className="space-y-4 md:space-y-6">
+          {/* Programs & Main Content */}
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-[280px_1fr]">
+            {/* Sidebar */}
+            <aside
+              className={`${
+                isSidebarOpen ? "block" : "hide-mobile"
+              } card max-w-none rounded-lg md:sticky md:top-24 md:max-h-screen md:overflow-y-auto`}
+            >
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold md:text-lg">Program Actions</h3>
+                  <p className="text-xs-muted mt-1 text-xs">Scoped to: {authUser.email}</p>
+                </div>
+
+                <details
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/30"
+                  open
+                >
+                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Rename or delete
+                  </summary>
+                  <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <label className="form-label text-xs">Rename selected</label>
+                    <input
+                      className="form-input text-xs sm:text-sm"
+                      value={renameProgramName}
+                      onChange={(e) => setRenameProgramName(e.target.value)}
+                      placeholder={selectedProgram?.name || "No program selected"}
+                      disabled={!selectedProgram}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        className="btn btn-secondary text-xs sm:text-sm"
+                        onClick={handleRenameProgram}
+                        disabled={!selectedProgram}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        className="btn bg-rose-500 text-xs text-white hover:bg-rose-600 disabled:opacity-40 sm:text-sm"
+                        onClick={handleDeleteProgram}
+                        disabled={!selectedProgram}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
               </div>
+            </aside>
+            {/* Main Content */}
+            <div className="space-y-4 md:space-y-6">
+              {/* Weekly Calendar */}
+              <section className="card-lg max-w-none">
+                <div className="mb-3 md:mb-4">
+                  <h2 className="text-base font-semibold md:text-lg">
+                    {selectedProgram?.name || "No Program"} · Weekly Calendar
+                  </h2>
+                  <p className="text-xs-muted mt-1 text-xs">Click a day to manage exercises</p>
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-2 sm:gap-3 grid-cols-4 lg:grid-cols-7">
                 {DAYS.map((day) => (
                   <button
                     key={day}
-                    className={`rounded-xl border p-4 text-left transition-smooth ${
+                    className={`rounded-lg border p-2 text-center text-xs transition-smooth sm:p-3 sm:text-sm ${
                       selectedDay === day
-                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                        ? "border-indigo-500 bg-indigo-50 font-semibold dark:bg-indigo-900/30"
                         : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
                     }`}
                     onClick={() => {
                       setSelectedDay(day);
                       setSession(null);
                       setNextExerciseIndex(0);
+                      setIsSidebarOpen(false);
                     }}
                   >
-                    <p className="font-semibold">{day}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      {selectedSchedule[day].length} exercise(s)
+                    <p className="font-semibold">{day.slice(0, 3)}</p>
+                    <p className="mt-1 text-xs opacity-75">
+                      {selectedSchedule[day].length}
                     </p>
                   </button>
                 ))}
-              </div>
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-              <section className="card max-w-none">
-                <h3>{editingExerciseId ? "Edit Exercise" : `Add Exercise · ${selectedDay}`}</h3>
-
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <label className="form-label">Exercise name</label>
-                    <input
-                      className="form-input"
-                      value={exerciseName}
-                      onChange={(e) => setExerciseName(e.target.value)}
-                      placeholder="Bodyweight squats"
-                      disabled={!selectedProgram}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">Duration</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        min={0}
-                        className="form-input"
-                        value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                        placeholder="Minutes"
-                        disabled={!selectedProgram}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        max={59}
-                        className="form-input"
-                        value={durationSeconds}
-                        onChange={(e) => setDurationSeconds(Number(e.target.value))}
-                        placeholder="Seconds"
-                        disabled={!selectedProgram}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="form-label">Rest between sets</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        min={0}
-                        className="form-input"
-                        value={restMinutes}
-                        onChange={(e) => setRestMinutes(Number(e.target.value))}
-                        placeholder="Minutes"
-                        disabled={!selectedProgram}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        max={59}
-                        className="form-input"
-                        value={restSeconds}
-                        onChange={(e) => setRestSeconds(Number(e.target.value))}
-                        placeholder="Seconds"
-                        disabled={!selectedProgram}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="form-label">Sets</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="form-input"
-                        value={sets}
-                        onChange={(e) => setSets(Number(e.target.value))}
-                        disabled={!selectedProgram}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Weight (kg)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.5"
-                        className="form-input"
-                        value={weightKg}
-                        onChange={(e) => setWeightKg(e.target.value)}
-                        placeholder="Optional"
-                        disabled={!selectedProgram}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="form-label">Notes (optional)</label>
-                    <textarea
-                      className="form-textarea"
-                      rows={3}
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Controlled movement, full range"
-                      disabled={!selectedProgram}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button className="btn btn-secondary" onClick={handleAddOrUpdateExercise} disabled={!selectedProgram}>
-                      {editingExerciseId ? "Update" : "Add"}
-                    </button>
-                    <button className="btn btn-secondary" onClick={resetExerciseForm}>
-                      Clear
-                    </button>
-                  </div>
                 </div>
               </section>
 
+              {/* Day Program Exercises List */}
               <section className="card-lg max-w-none">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3>{selectedDay} Program</h3>
-                    <p className="text-sm-muted">Day total duration: {formatLongDuration(dayTotalDuration)}</p>
+                  <div className="mb-3 md:mb-4">
+                    <h3 className="text-base font-semibold md:text-lg">{selectedDay} Program</h3>
+                    <p className="text-xs-muted mt-1 text-xs">
+                      Day total: {formatLongDuration(dayTotalDuration)}
+                    </p>
                   </div>
-                  <span className="text-sm-muted">Ranked list with timer flow</span>
-                </div>
 
-                {dayExercises.length === 0 && (
-                  <div className="alert alert-info">No exercises yet for {selectedDay}. Add one from the left panel.</div>
-                )}
+                  {dayExercises.length === 0 && (
+                    <div className="alert alert-info text-xs sm:text-sm">
+                      No exercises yet for {selectedDay}. Add one below.
+                    </div>
+                  )}
 
-                <div className="space-y-3">
-                  {dayExercises.map((exercise, index) => {
-                    const isCurrent = session?.exerciseIndex === index;
-                    const canStart = session ? false : index === readyExerciseIndex;
-                    const exerciseTotal = calculateExerciseTotal(exercise);
+                  <div className="space-y-2 md:space-y-3">
+                    {dayExercises.map((exercise, index) => {
+                      const isCurrent = session?.exerciseIndex === index;
+                      const canStart = session ? false : index === readyExerciseIndex;
+                      const exerciseTotal = calculateExerciseTotal(exercise);
+                      const demoUrl = exercise.exerciseMediaUrl;
 
-                    return (
+                      return (
                       <div
                         key={exercise.id}
-                        className={`rounded-xl border p-4 ${
+                        className={`rounded-lg border p-3 text-xs transition-smooth sm:p-4 sm:text-sm ${
                           isCurrent
                             ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                             : "border-slate-200 dark:border-slate-700"
                         }`}
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex flex-1 items-start gap-2">
+                              <div className="flex flex-col gap-1 pt-1">
+                                <button
+                                  className="btn btn-secondary px-1.5 py-1 text-[10px]"
+                                  onClick={() => moveExercise(index, -1)}
+                                  aria-label="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  className="btn btn-secondary px-1.5 py-1 text-[10px]"
+                                  onClick={() => moveExercise(index, 1)}
+                                  aria-label="Move down"
+                                >
+                                  ↓
+                                </button>
+                              </div>
+                              <div className="flex-1">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">#{index + 1}</p>
-                            <h4 className="text-lg font-semibold">{exercise.name}</h4>
-                            <p className="text-sm-muted mt-1">
-                              {exercise.sets} set(s) · {formatLongDuration(exercise.durationSec)} work · {formatLongDuration(exercise.restSec)} rest
+                            <h4 className="mt-1 font-semibold">{exercise.name}</h4>
+                            <p className="text-xs-muted mt-1">
+                              {exercise.sets}×{formatLongDuration(exercise.durationSec)} / {formatLongDuration(exercise.restSec)} rest
                             </p>
-                            <p className="text-sm-muted">Total exercise duration: {formatLongDuration(exerciseTotal)}</p>
-                            {exercise.weightKg != null && <p className="text-sm-muted">Weight: {exercise.weightKg} kg</p>}
-                            {exercise.notes && <p className="mt-2 text-sm">{exercise.notes}</p>}
+                            <p className="text-xs-muted">Total: {formatLongDuration(exerciseTotal)}</p>
+                            {exercise.weightKg != null && (
+                              <p className="text-xs-muted">{exercise.weightKg} kg</p>
+                            )}
+                              {demoUrl && (
+                                <img
+                                  src={demoUrl}
+                                  alt={exercise.exerciseTypeName ?? "Exercise demo"}
+                                  className="mt-2 h-16 w-24 rounded-md object-cover"
+                                />
+                              )}
+                            {exercise.notes && <p className="mt-2 text-xs">{exercise.notes}</p>}
+                              </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <button className="btn btn-secondary px-3 py-1.5" onClick={() => moveExercise(index, -1)}>
-                              ↑
-                            </button>
-                            <button className="btn btn-secondary px-3 py-1.5" onClick={() => moveExercise(index, 1)}>
-                              ↓
-                            </button>
-                            <button className="btn btn-secondary px-3 py-1.5" onClick={() => handleEditExercise(exercise)}>
-                              Edit
+                            <div className="flex flex-wrap gap-1">
+                            <button
+                              className="btn btn-secondary px-2 py-1 text-xs"
+                              onClick={() => handleEditExercise(exercise)}
+                            >
+                              ✎
                             </button>
                             <button
-                              className="btn bg-rose-500 px-3 py-1.5 text-white hover:bg-rose-600"
+                              className="btn bg-rose-500 px-2 py-1 text-xs text-white hover:bg-rose-600"
                               onClick={() => handleDeleteExercise(exercise.id, exercise.name)}
                             >
-                              Delete
-                            </button>
-                            <button
-                              className="btn bg-emerald-500 px-3 py-1.5 text-white hover:bg-emerald-600 disabled:opacity-40"
-                              onClick={() => startExercise(index)}
-                              disabled={!canStart}
-                            >
-                              Start
+                              ✕
                             </button>
                           </div>
                         </div>
 
                         {isCurrent && session && (
-                          <div className="mt-4 rounded-lg border border-emerald-300 bg-white p-4 dark:bg-slate-900">
-                            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                              {session.phase === "work" ? "Workout in progress" : "Rest time"}
+                          <div className="mt-3 rounded-lg border border-emerald-300 bg-white p-3 dark:bg-slate-900 sm:p-4">
+                            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                              {session.phase === "work" ? "💪 Workout" : "🛑 Rest"}
                             </p>
-                            <p className="mt-1 text-3xl font-bold">{formatClock(session.remainingSec)}</p>
-                            <p className="mt-1 text-sm-muted">
+                            <p className="mt-2 text-2xl font-bold sm:text-3xl">
+                              {session.paused ? "⏸" : ""} {formatClock(session.remainingSec)}
+                            </p>
+                            <p className="text-xs-muted mt-1">
                               Set {Math.min(session.setNumber, exercise.sets)} of {exercise.sets}
                             </p>
-                            <p className="mt-3 rounded bg-slate-100 px-3 py-2 text-sm italic dark:bg-slate-800">“{session.quote}”</p>
+                            <p className="mt-2 rounded bg-slate-100 px-2 py-1.5 text-xs italic dark:bg-slate-800">
+                              &ldquo;{session.quote}&rdquo;
+                            </p>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              </section>
+                      );
+                    })}
+                    <button
+                      className="btn btn-secondary w-full text-xs sm:text-sm"
+                      onClick={openNewExerciseForm}
+                      disabled={!selectedProgram}
+                    >
+                      + Add exercise
+                    </button>
+                    {dayExercises.length > 0 && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          className="btn bg-emerald-500 flex-1 text-xs text-white hover:bg-emerald-600 disabled:opacity-40 sm:text-sm"
+                          onClick={() => startExercise(0)}
+                          disabled={session !== null}
+                        >
+                          ▶️ Start
+                        </button>
+                        <button
+                          className="btn btn-primary flex-1 text-xs sm:text-sm"
+                          onClick={handlePauseResume}
+                          disabled={session === null}
+                        >
+                          {session?.paused ? "▶️ Resume" : "⏸ Pause"}
+                        </button>
+                        <button
+                          className="btn bg-slate-600 px-2 py-1 text-xs text-white hover:bg-slate-700 disabled:opacity-40 sm:text-sm"
+                          onClick={handleEndExercise}
+                          disabled={session === null}
+                        >
+                          ⏹ End
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </section>
             </div>
-          </main>
-        </section>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

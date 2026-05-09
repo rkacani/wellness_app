@@ -9,9 +9,29 @@ create table if not exists public.week_programs (
   created_at timestamptz not null default now()
 );
 
+alter table public.exercises
+  add column if not exists exercise_type_id uuid references public.exercise_type(id);
+
+create table if not exists public.exercise_type (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  media_url text,
+  created_at timestamptz not null default now()
+);
+
+insert into public.exercise_type (name, media_url)
+values
+  ('Bench Press', 'https://gymvisual.com/img/p/3/3/1/3/9/33139.gif'),
+  ('Pull Up', 'https://gymvisual.com/img/p/5/4/1/2/5412.gif'),
+  ('Squat', 'https://gymvisual.com/img/p/2/4/9/8/4/24984.gif'),
+  ('Deadlift', 'https://gymvisual.com/img/p/2/5/0/2/8/25028.gif'),
+  ('Barbell Shoulder', 'https://gymvisual.com/img/p/2/4/9/6/2/24962.gif')
+on conflict (name) do nothing;
+
 create table if not exists public.exercises (
   id uuid primary key default gen_random_uuid(),
   program_id uuid not null references public.week_programs(id) on delete cascade,
+  exercise_type_id uuid references public.exercise_type(id),
   day_of_week text not null check (
     day_of_week in ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
   ),
@@ -33,6 +53,7 @@ create index if not exists idx_exercises_program_day_rank
 
 alter table public.week_programs enable row level security;
 alter table public.exercises enable row level security;
+alter table public.exercise_type enable row level security;
 
 -- WEEK PROGRAM POLICIES
 drop policy if exists "Users read own programs" on public.week_programs;
@@ -59,6 +80,13 @@ create policy "Users delete own programs"
 on public.week_programs
 for delete
 using (auth.uid() = user_id);
+
+-- EXERCISE TYPE POLICIES
+drop policy if exists "Public read exercise types" on public.exercise_type;
+create policy "Public read exercise types"
+on public.exercise_type
+for select
+using (true);
 
 -- EXERCISES POLICIES
 drop policy if exists "Users read own exercises" on public.exercises;

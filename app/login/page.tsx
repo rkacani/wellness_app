@@ -79,10 +79,13 @@ export default function LoginPage() {
   return (
     <div className="app-shell">
       <div className="card">
-        <h1 className="text-center mb-2">Welcome Back</h1>
-        <p className="text-sm-muted text-center mb-6">Sign in to your wellness account</p>
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-500">Welcome back</p>
+          <h1 className="mt-2 text-lg font-semibold sm:text-2xl">Sign in to your wellness account</h1>
+          <p className="text-xs-muted mt-2">Continue your training plan in seconds</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="form-group">
             <label className="form-label">Email Address</label>
             <input

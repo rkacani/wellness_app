@@ -22,71 +22,158 @@
     }
   }
 
+  /* Mobile-first typography */
   h1 {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+    font-size: 1.5rem;
+    line-height: 2rem;
     font-weight: 700;
     letter-spacing: -0.025em;
   }
 
-  h2 {
-    font-size: 1.5rem;
-    line-height: 2rem;
-    font-weight: 600;
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
   }
 
-  h3 {
-    font-size: 1.125rem;
+  h2 {
+    font-size: 1.25rem;
     line-height: 1.75rem;
     font-weight: 600;
   }
 
-  p {
+  @media (min-width: 768px) {
+    h2 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+  }
+
+  h3 {
     font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  @media (min-width: 768px) {
+    h3 {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+  }
+
+  p {
+    font-size: 0.95rem;
     line-height: 1.5;
+  }
+
+  @media (min-width: 768px) {
+    p {
+      font-size: 1rem;
+    }
   }
 }
 
 @layer components {
-  /* Page Layout */
+  /* Page Layout - Mobile First */
   .app-shell {
-    @apply min-h-screen flex items-center justify-center px-4 py-8;
+    @apply min-h-screen flex items-center justify-center px-3 py-6;
   }
 
   @media (min-width: 640px) {
+    .app-shell {
+      @apply px-4 py-8;
+    }
+  }
+
+  @media (min-width: 768px) {
     .app-shell {
       @apply py-12;
     }
   }
 
-  /* Cards & Containers */
+  /* Cards & Containers - Mobile First */
   .card {
-    @apply w-full max-w-md bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8;
+    @apply w-full bg-white dark:bg-slate-800 rounded-lg shadow-md p-5;
     transition: box-shadow 0.3s ease;
   }
 
+  @media (min-width: 640px) {
+    .card {
+      @apply rounded-xl shadow-lg p-6;
+      max-width: 28rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .card {
+      @apply p-8;
+      max-width: 28rem;
+    }
+  }
+
   .card:hover {
-    @apply shadow-xl;
+    @apply shadow-lg;
+  }
+
+  @media (min-width: 640px) {
+    .card:hover {
+      @apply shadow-xl;
+    }
   }
 
   .card-lg {
-    @apply w-full max-w-2xl bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8;
+    @apply w-full bg-white dark:bg-slate-800 rounded-lg shadow-md p-5;
+    transition: box-shadow 0.3s ease;
   }
 
-  /* Form Elements */
+  @media (min-width: 640px) {
+    .card-lg {
+      @apply rounded-xl shadow-lg p-6;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .card-lg {
+      @apply p-8;
+    }
+  }
+
+  /* Form Elements - Mobile First */
   .form-group {
-    @apply space-y-2 mb-4;
+    @apply space-y-1.5 mb-3;
+  }
+
+  @media (min-width: 640px) {
+    .form-group {
+      @apply space-y-2 mb-4;
+    }
   }
 
   .form-label {
-    @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+    @apply block text-xs font-medium text-slate-700 dark:text-slate-300;
+  }
+
+  @media (min-width: 640px) {
+    .form-label {
+      @apply text-sm;
+    }
   }
 
   .form-input,
   .form-textarea,
   .form-select {
-    @apply w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400;
+    @apply w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-sm;
     transition: all 0.2s ease;
+  }
+
+  @media (min-width: 640px) {
+    .form-input,
+    .form-textarea,
+    .form-select {
+      @apply px-4 py-2.5;
+    }
   }
 
   .form-input:focus,
@@ -101,10 +188,15 @@
     @apply bg-slate-100 dark:bg-slate-700 opacity-50 cursor-not-allowed;
   }
 
-  /* Buttons */
+  /* Buttons - Mobile First */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800;
-    transition: all 0.2s ease;
+    @apply inline-flex items-center justify-center px-3 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 text-sm min-h-11 transition-all;
+  }
+
+  @media (min-width: 640px) {
+    .btn {
+      @apply px-4 py-2.5 min-h-10;
+    }
   }
 
   .btn:disabled {
@@ -136,17 +228,23 @@
   }
 
   .btn-ghost {
-    @apply px-0 text-sky-500 dark:text-sky-400 underline-offset-4;
+    @apply px-0 text-sky-500 dark:text-sky-400 underline-offset-4 text-sm;
   }
 
   .btn-ghost:hover {
     @apply text-sky-600 dark:text-sky-300 underline;
   }
 
-  /* Alerts & Messages */
+  /* Alerts & Messages - Mobile First */
   .alert {
-    @apply p-4 rounded-lg border;
+    @apply p-3 rounded-lg border text-sm;
     transition: all 0.2s ease;
+  }
+
+  @media (min-width: 640px) {
+    .alert {
+      @apply p-4;
+    }
   }
 
   .alert-error {
@@ -185,7 +283,13 @@
   }
 
   .text-sm-muted {
-    @apply text-sm text-slate-500 dark:text-slate-400;
+    @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+
+  @media (min-width: 640px) {
+    .text-sm-muted {
+      @apply text-sm;
+    }
   }
 }
 
@@ -196,5 +300,98 @@
 
   .transition-smooth {
     transition: all 0.3s ease;
+  }
+
+  /* Mobile-first responsive utilities */
+  .container-responsive {
+    @apply mx-auto px-3 w-full;
+  }
+
+  @media (min-width: 640px) {
+    .container-responsive {
+      @apply px-4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .container-responsive {
+      @apply px-6;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-responsive {
+      @apply px-10;
+    }
+  }
+
+  /* Touch-friendly targets (min 44px) */
+  .touch-target {
+    @apply min-h-11 min-w-11;
+  }
+
+  /* Safe area padding for mobile notches */
+  .safe-padding {
+    @apply pt-4 pb-4;
+  }
+
+  @media (min-width: 768px) {
+    .safe-padding {
+      @apply pt-6 pb-6;
+    }
+  }
+
+  /* Responsive spacing helpers */
+  .gap-mobile {
+    @apply gap-2;
+  }
+
+  @media (min-width: 640px) {
+    .gap-mobile {
+      @apply gap-3;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .gap-mobile {
+      @apply gap-4;
+    }
+  }
+
+  .p-mobile {
+    @apply p-3;
+  }
+
+  @media (min-width: 640px) {
+    .p-mobile {
+      @apply p-4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .p-mobile {
+      @apply p-6;
+    }
+  }
+
+  /* Hide/show helpers for responsive layouts */
+  .hide-mobile {
+    @apply hidden;
+  }
+
+  @media (min-width: 768px) {
+    .hide-mobile {
+      @apply block;
+    }
+  }
+
+  .show-mobile {
+    @apply block;
+  }
+
+  @media (min-width: 768px) {
+    .show-mobile {
+      @apply hidden;
+    }
   }
 }

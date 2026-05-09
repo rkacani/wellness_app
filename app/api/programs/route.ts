@@ -23,6 +23,9 @@ const DAYS: DayName[] = [
 type ExercisePayload = {
   id: string;
   name: string;
+  exerciseTypeId?: string | null;
+  exerciseTypeName?: string | null;
+  exerciseMediaUrl?: string | null;
   durationSec: number;
   sets: number;
   restSec: number;
@@ -73,9 +76,25 @@ export async function GET(req: Request) {
     const programIds = programs.map((program) => program.id);
     const { data: exercises, error: exerciseError } = await supabase
       .from("exercises")
-      .select("id, program_id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes")
+      .select("id, program_id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes, exercise_type_id")
       .in("program_id", programIds)
       .order("rank", { ascending: true });
+
+    let exerciseTypeMap = new Map<string, { name?: string; media_url?: string }>();
+    try {
+      const { data: exerciseTypes } = await supabase
+        .from("exercise_type")
+        .select("id, name, media_url");
+      if (Array.isArray(exerciseTypes)) {
+        exerciseTypes.forEach((type) => {
+          if (type?.id) {
+            exerciseTypeMap.set(type.id, { name: type.name, media_url: type.media_url });
+          }
+        });
+      }
+    } catch {
+      exerciseTypeMap = new Map();
+    }
 
     if (exerciseError) {
       return NextResponse.json({ error: exerciseError.message }, { status: 500 });
@@ -89,9 +108,16 @@ export async function GET(req: Request) {
           const day = exercise.day_of_week as DayName;
           if (DAYS.includes(day)) {
             const dayItems = schedule[day] as ExercisePayload[];
+            const exerciseType = exercise.exercise_type_id
+              ? exerciseTypeMap.get(exercise.exercise_type_id)
+              : undefined;
+
             dayItems.push({
               id: exercise.id,
               name: exercise.name,
+              exerciseTypeId: exercise.exercise_type_id ?? null,
+              exerciseTypeName: exerciseType?.name ?? null,
+              exerciseMediaUrl: exerciseType?.media_url ?? null,
               durationSec: exercise.duration_seconds,
               sets: exercise.sets,
               restSec: exercise.rest_seconds,

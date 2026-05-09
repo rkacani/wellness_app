@@ -51,12 +51,14 @@ export async function PATCH(req: Request, { params }: Params) {
     if (typeof body.weightKg === "number") updatePayload.weight_kg = body.weightKg;
     if (body.weightKg === null) updatePayload.weight_kg = null;
     if (typeof body.notes === "string") updatePayload.notes = body.notes.trim() || null;
+    if (typeof body.exerciseTypeId === "string") updatePayload.exercise_type_id = body.exerciseTypeId;
+    if (body.exerciseTypeId === null) updatePayload.exercise_type_id = null;
 
     const { data, error } = await supabase
       .from("exercises")
       .update(updatePayload)
       .eq("id", exerciseId)
-      .select("id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes")
+      .select("id, day_of_week, rank, name, duration_seconds, sets, rest_seconds, weight_kg, notes, exercise_type_id")
       .single();
 
     if (error) {
@@ -69,6 +71,7 @@ export async function PATCH(req: Request, { params }: Params) {
         dayOfWeek: data.day_of_week,
         rank: data.rank,
         name: data.name,
+        exerciseTypeId: data.exercise_type_id ?? null,
         durationSec: data.duration_seconds,
         sets: data.sets,
         restSec: data.rest_seconds,
