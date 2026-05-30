@@ -131,6 +131,7 @@ export default function DashboardPage() {
 
   const [isLoadingData, setIsLoadingData] = React.useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
   const [programs, setPrograms] = React.useState<WeekProgram[]>([]);
   const [selectedProgramId, setSelectedProgramId] = React.useState<string>("");
   const [selectedDay, setSelectedDay] = React.useState<DayName>(() => {
@@ -143,6 +144,7 @@ export default function DashboardPage() {
   const [renameProgramName, setRenameProgramName] = React.useState("");
   const [isRenameInputFocused, setIsRenameInputFocused] = React.useState(false);
   const [showProgramForm, setShowProgramForm] = React.useState(false);
+  const [showRenameProgramForm, setShowRenameProgramForm] = React.useState(false);
 
   const [exerciseName, setExerciseName] = React.useState("");
   const [exerciseTypes, setExerciseTypes] = React.useState<ExerciseType[]>([]);
@@ -200,6 +202,10 @@ export default function DashboardPage() {
   };
 
   React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  React.useEffect(() => {
     if (!authUser) {
       router.replace("/login");
       return;
@@ -225,8 +231,14 @@ export default function DashboardPage() {
         return;
       }
 
-      const data = (await res.json()) as ExerciseType[];
-      setExerciseTypes(Array.isArray(data) ? data : []);
+      const data = (await res.json()) as Array<ExerciseType & { media_url?: string | null }>;
+      const normalized = Array.isArray(data)
+        ? data.map((item) => ({
+            ...item,
+            mediaUrl: item.mediaUrl ?? item.media_url ?? null,
+          }))
+        : [];
+      setExerciseTypes(normalized);
     };
 
     void loadExerciseTypes();
@@ -340,6 +352,18 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [session, dayExercises]);
 
+  React.useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+
+    if (showExerciseForm) {
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showExerciseForm]);
+
   const resetExerciseForm = () => {
     setExerciseName("");
     setSelectedExerciseTypeId("");
@@ -405,6 +429,7 @@ export default function DashboardPage() {
     }
 
     setRenameProgramName("");
+    setShowRenameProgramForm(false);
     await loadPrograms(selectedProgram.id);
   };
 
@@ -619,6 +644,16 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  if (!isClient) {
+    return (
+      <div className="app-shell">
+        <div className="card text-center">
+          <p>Loading your programs...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!authUser) {
     return (
       <div className="app-shell">
@@ -683,17 +718,55 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      {showExerciseForm && (
+      {showRenameProgramForm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rename Program</p>
+                <h3 className="text-base font-semibold">{selectedProgram?.name ?? "Program"}</h3>
+              </div>
+              <button className="btn btn-secondary text-xs" onClick={() => setShowRenameProgramForm(false)}>
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="form-label">New name</label>
+                <input
+                  className="form-input text-sm"
+                  value={renameProgramName}
+                  onChange={(e) => setRenameProgramName(e.target.value)}
+                  placeholder={selectedProgram?.name || "New name"}
+                  disabled={!selectedProgram}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                className="btn btn-secondary text-xs sm:text-sm"
+                onClick={handleRenameProgram}
+                disabled={!selectedProgram || !renameProgramName.trim() || renameProgramName === selectedProgram?.name}
+              >
+                Rename program
+              </button>
+              <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowRenameProgramForm(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showExerciseForm && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4">
+          <div className="h-[calc(100vh-2rem)] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add Exercise</p>
                 <h3 className="text-base font-semibold">{selectedDay}</h3>
               </div>
-              <button className="btn btn-secondary text-xs" onClick={resetExerciseForm}>
-                Close
-              </button>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -718,12 +791,12 @@ export default function DashboardPage() {
                       </option>
                     ))}
                   </select>
-                  <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
+                  <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 sm:h-20">
                     {exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ? (
                       <img
                         src={exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ?? ""}
                         alt="Exercise preview"
-                        className="h-20 w-full rounded-md object-cover"
+                        className="h-full w-full rounded-md object-cover"
                       />
                     ) : (
                       "Preview"
@@ -850,26 +923,26 @@ export default function DashboardPage() {
       )}
       {/* Header */}
       <header className="sticky top-0 z-40 bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-lg">
-        <div className="container-responsive py-4">
-          <div className="flex items-start justify-between gap-3">
+        <div className="container-responsive pt-5 pb-1">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <h1 className="text-lg font-bold md:text-2xl">Workout Dashboard</h1>
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
             <button
-              className="btn bg-white/20 px-2 py-1 text-xs font-medium text-white hover:bg-white/30"
+              className="btn btn-secondary mt-2 w-auto"
               onClick={logout}
               title="Logout"
             >
               Logout
             </button>
           </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <span className="text-xs font-medium text-sky-100">Select program:</span>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
+              <span className="text-xs font-medium text-sky-100">Select program:</span>
               {programs.length > 0 ? (
                 <select
-                  className="form-select text-xs sm:text-sm"
+                  className="form-select min-w-[180px] text-xs sm:text-sm"
                   value={selectedProgram?.id ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -887,46 +960,35 @@ export default function DashboardPage() {
               ) : (
                 <span className="text-xs text-sky-100 sm:text-sm">No programs created</span>
               )}
+            </div>
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
               <button
-                className="rounded-md bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 sm:text-sm"
+                className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
                 onClick={() => setShowProgramForm(true)}
                 title="Create a new workout program"
               >
-                + New program
+                New program
               </button>
               {selectedProgram && (
                 <button
-                  className="rounded-md bg-rose-100 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50 sm:text-sm"
-                  onClick={() => void handleDeleteProgram()}
-                  title="Delete the current program"
+                  className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
+                  onClick={() => {
+                    setRenameProgramName(selectedProgram.name);
+                    setShowRenameProgramForm(true);
+                  }}
+                  title="Rename the current program"
                 >
-                  Delete current program
+                Rename program    
                 </button>
               )}
               {selectedProgram && (
-                <>
-                  <input
-                    className="form-input text-xs sm:text-sm"
-                    value={renameProgramName || selectedProgram?.name}
-                    onChange={(e) => setRenameProgramName(e.target.value)}
-                    placeholder={selectedProgram?.name || "New name"}
-                    disabled={!selectedProgram}
-                    onFocus={() => setIsRenameInputFocused(true)}
-                    onBlur={() => setIsRenameInputFocused(false)}
-                  />
-                  <button
-                    className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:text-sm ${
-                      isRenameInputFocused
-                        ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
-                    }`}
-                    onClick={handleRenameProgram}
-                    disabled={!selectedProgram || !renameProgramName.trim() || renameProgramName === selectedProgram.name}
-                    title="Rename the current program"
-                  >
-                    ✓ Rename
-                  </button>
-                </>
+                <button
+                  className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
+                  onClick={() => void handleDeleteProgram()}
+                  title="Delete the current program"
+                >
+                  Delete program
+                </button>
               )}
             </div>
           </div>
@@ -997,7 +1059,7 @@ export default function DashboardPage() {
                       return (
                       <div
                         key={exercise.id}
-                        className={`rounded-lg border p-3 text-xs transition-smooth sm:p-4 sm:text-sm ${
+                        className={`relative rounded-lg border p-3 text-xs transition-smooth sm:p-4 sm:text-sm ${
                           isCurrent
                             ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                             : "border-slate-200 dark:border-slate-700"
@@ -1032,25 +1094,27 @@ export default function DashboardPage() {
                               <p className="text-xs-muted">{exercise.weightKg} kg</p>
                             )}
                               {demoUrl && (
-                                <img
-                                  src={demoUrl}
-                                  alt={exercise.exerciseTypeName ?? "Exercise demo"}
-                                  className="mt-2 h-16 w-24 rounded-md object-cover"
-                                />
+                                <div className="mt-3 flex justify-center">
+                                  <img
+                                    src={demoUrl}
+                                    alt={exercise.exerciseTypeName ?? "Exercise demo"}
+                                    className="h-28 w-44 rounded-md object-contain sm:h-32 sm:w-52"
+                                  />
+                                </div>
                               )}
                             {exercise.notes && <p className="mt-2 text-xs">{exercise.notes}</p>}
                               </div>
                           </div>
 
-                            <div className="flex flex-wrap gap-1">
+                          <div className="absolute right-2 top-2 flex gap-1">
                             <button
-                              className="btn btn-secondary px-2 py-1 text-xs"
+                              className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
                               onClick={() => handleEditExercise(exercise)}
                             >
                               ✎
                             </button>
                             <button
-                              className="btn bg-rose-500 px-2 py-1 text-xs text-white hover:bg-rose-600"
+                              className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
                               onClick={() => handleDeleteExercise(exercise.id, exercise.name)}
                             >
                               ✕
@@ -1087,21 +1151,21 @@ export default function DashboardPage() {
                     {dayExercises.length > 0 && (
                       <div className="mt-3 flex gap-2">
                         <button
-                          className="btn bg-emerald-500 flex-1 text-xs text-white hover:bg-emerald-600 disabled:opacity-40 sm:text-sm"
+                          className="btn btn-secondary flex-1 text-xs sm:text-sm"
                           onClick={() => startExercise(0)}
                           disabled={session !== null}
                         >
                           ▶️ Start
                         </button>
                         <button
-                          className="btn btn-primary flex-1 text-xs sm:text-sm"
+                          className="btn btn-secondary flex-1 text-xs sm:text-sm"
                           onClick={handlePauseResume}
                           disabled={session === null}
                         >
                           {session?.paused ? "▶️ Resume" : "⏸ Pause"}
                         </button>
                         <button
-                          className="btn bg-slate-600 px-2 py-1 text-xs text-white hover:bg-slate-700 disabled:opacity-40 sm:text-sm"
+                          className="btn btn-secondary flex-1 text-xs sm:text-sm"
                           onClick={handleEndExercise}
                           disabled={session === null}
                         >

@@ -190,12 +190,12 @@
 
   /* Buttons - Mobile First */
   .btn {
-    @apply inline-flex items-center justify-center px-3 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 text-sm min-h-11 transition-all;
+    @apply inline-flex items-center justify-center px-2 py-1.5 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 text-sm min-h-9 transition-all;
   }
 
   @media (min-width: 640px) {
     .btn {
-      @apply px-4 py-2.5 min-h-10;
+      @apply px-3 py-2 min-h-9;
     }
   }
 
@@ -216,7 +216,7 @@
   }
 
   .btn-secondary {
-    @apply w-full bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white;
+    @apply bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white;
   }
 
   .btn-secondary:hover:not(:disabled) {
