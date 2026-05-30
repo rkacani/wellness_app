@@ -45,15 +45,42 @@ create table if not exists public.exercises (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.habits (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  target_aim text not null default 'daily' check (target_aim in ('daily','weekly','monthly','custom')),
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.habit_completions (
+  id uuid primary key default gen_random_uuid(),
+  habit_id uuid not null references public.habits(id) on delete cascade,
+  user_id uuid not null,
+  completed_at timestamptz not null default now()
+);
+
 create index if not exists idx_week_programs_user 
   on public.week_programs(user_id);
 
 create index if not exists idx_exercises_program_day_rank 
   on public.exercises(program_id, day_of_week, rank);
 
+create index if not exists idx_habits_user
+  on public.habits(user_id);
+
+create index if not exists idx_habit_completions_user_completed_at
+  on public.habit_completions(user_id, completed_at desc);
+
+create index if not exists idx_habit_completions_habit_completed_at
+  on public.habit_completions(habit_id, completed_at desc);
+
 alter table public.week_programs enable row level security;
 alter table public.exercises enable row level security;
 alter table public.exercise_type enable row level security;
+alter table public.habits enable row level security;
+alter table public.habit_completions enable row level security;
 
 -- WEEK PROGRAM POLICIES
 drop policy if exists "Users read own programs" on public.week_programs;

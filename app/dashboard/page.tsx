@@ -516,6 +516,65 @@ export default function DashboardPage() {
     await loadPrograms(selectedProgram.id);
   };
 
+  const handleAddHabit = async () => {
+    if (!authUser || !habitName.trim()) {
+      return;
+    }
+
+    const res = await fetch("/api/habits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: authUser.id, name: habitName.trim() }),
+    });
+
+    if (!res.ok) {
+      return;
+    }
+
+    const created = (await res.json()) as Habit;
+    setHabits((prev) => [...prev, created]);
+    setHabitName("");
+    setShowHabitForm(false);
+  };
+
+  const toggleHabit = async (habit: Habit) => {
+    if (!authUser) {
+      return;
+    }
+
+    const nextCompletedAt = habit.completedAt ? null : new Date().toISOString();
+    const res = await fetch(`/api/habits/${habit.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: authUser.id, completedAt: nextCompletedAt }),
+    });
+
+    if (!res.ok) {
+      return;
+    }
+
+    const updated = (await res.json()) as Habit;
+    setHabits((prev) => prev.map((item) => (item.id === habit.id ? updated : item)));
+  };
+
+  const handleDeleteHabit = async (habit: Habit) => {
+    if (!authUser) {
+      return;
+    }
+
+    const res = await fetch(`/api/habits/${habit.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: authUser.id }),
+    });
+
+    if (!res.ok) {
+      return;
+    }
+
+    setHabits((prev) => prev.filter((item) => item.id !== habit.id));
+  };
+
   const handleEditExercise = (exercise: Exercise) => {
     const durationSplit = splitDuration(exercise.durationSec);
     const restSplit = splitDuration(exercise.restSec);
@@ -929,13 +988,18 @@ export default function DashboardPage() {
               <h1 className="text-lg font-bold md:text-2xl">Workout Dashboard</h1>
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
-            <button
-              className="btn btn-secondary mt-2 w-auto"
-              onClick={logout}
-              title="Logout"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-2">
+              <Link className="btn btn-secondary h-9 w-9 p-0 text-sm" href="/habits" title="Go to daily habits">
+                ≡
+              </Link>
+              <button
+                className="btn btn-secondary mt-2 w-auto"
+                onClick={logout}
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
@@ -998,9 +1062,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="container-responsive py-4 md:py-6">
         <div className="space-y-4 md:space-y-6">
-          {/* Programs & Main Content */}
           <div className="space-y-4 md:space-y-6">
-            {/* Weekly Calendar */}
             <section className="card-lg max-w-none">
                 <div className="mb-3 md:mb-4">
                   <h2 className="text-base font-semibold md:text-lg">
@@ -1034,7 +1096,6 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              {/* Day Program Exercises List */}
               <section className="card-lg max-w-none">
                   <div className="mb-3 md:mb-4">
                     <h3 className="text-base font-semibold md:text-lg">{selectedDay} Program</h3>
