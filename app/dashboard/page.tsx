@@ -855,7 +855,7 @@ export default function DashboardPage() {
                       <img
                         src={exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ?? ""}
                         alt="Exercise preview"
-                        className="h-full w-full rounded-md object-cover"
+                        className="h-20 w-50 rounded-md object-contain sm:h-10 sm:w-30"
                       />
                     ) : (
                       "Preview"
@@ -989,11 +989,11 @@ export default function DashboardPage() {
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link className="btn btn-secondary h-9 w-9 p-0 text-sm" href="/habits" title="Go to daily habits">
-                ≡
+              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/habits" title="Go to habits">
+                Go to habits
               </Link>
               <button
-                className="btn btn-secondary mt-2 w-auto"
+                className="btn btn-secondary w-auto text-xs sm:text-sm"
                 onClick={logout}
                 title="Logout"
               >
@@ -1027,15 +1027,15 @@ export default function DashboardPage() {
             </div>
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
               <button
-                className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
+                className="btn btn-secondary w-auto text-xs sm:text-sm"
                 onClick={() => setShowProgramForm(true)}
                 title="Create a new workout program"
-              >
+                          >
                 New program
               </button>
               {selectedProgram && (
                 <button
-                  className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
+                  className="btn btn-secondary w-auto text-xs sm:text-sm"
                   onClick={() => {
                     setRenameProgramName(selectedProgram.name);
                     setShowRenameProgramForm(true);
@@ -1047,7 +1047,7 @@ export default function DashboardPage() {
               )}
               {selectedProgram && (
                 <button
-                  className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
+                  className="btn btn-secondary w-auto text-xs sm:text-sm"
                   onClick={() => void handleDeleteProgram()}
                   title="Delete the current program"
                 >

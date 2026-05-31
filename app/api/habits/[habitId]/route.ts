@@ -33,7 +33,6 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const updatePayload: Record<string, string | null> = {};
     if (typeof body.name === "string") updatePayload.name = body.name.trim();
-    if (typeof body.targetAim === "string") updatePayload.target_aim = body.targetAim.trim().toLowerCase();
     if (typeof body.completedAt === "string") updatePayload.completed_at = body.completedAt;
     if (body.completedAt === null) updatePayload.completed_at = null;
     if (typeof body.completionDate === "string" && typeof body.markComplete === "boolean") {
@@ -70,7 +69,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .from("habits")
       .update(updatePayload)
       .eq("id", habitId)
-      .select("id, name, target_aim, completed_at, created_at")
+      .select("id, name, completed_at, created_at")
       .single();
 
     if (error) {
@@ -81,7 +80,6 @@ export async function PATCH(req: Request, { params }: Params) {
       {
         id: data.id,
         name: data.name,
-        targetAim: data.target_aim,
         completedAt: data.completed_at,
         createdAt: data.created_at,
       },

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 type Habit = {
   id: string;
   name: string;
-  targetAim?: "daily" | "weekly" | "monthly" | "custom";
   completedAt: string | null;
   createdAt?: string;
   completionCount?: number;
@@ -292,6 +291,9 @@ export default function HabitsPage() {
     return habits.length * diffDays;
   }, [habits, selectedDayDate, selectedPeriod]);
 
+  const chartHeight = 96;
+
+
   const loadHabits = async () => {
     if (!authUser) {
       return;
@@ -333,7 +335,7 @@ export default function HabitsPage() {
     const res = await fetch("/api/habits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: authUser.id, name: habitName.trim(), targetAim: "daily" }),
+      body: JSON.stringify({ userId: authUser.id, name: habitName.trim() }),
     });
 
     if (!res.ok) {
@@ -344,14 +346,6 @@ export default function HabitsPage() {
     setHabits((prev) => [...prev, created]);
     setHabitName("");
     setShowHabitForm(false);
-  };
-
-  const targetAimLabel = (targetAim?: Habit["targetAim"]) => {
-    if (!targetAim) {
-      return "Daily";
-    }
-
-    return targetAim.charAt(0).toUpperCase() + targetAim.slice(1);
   };
 
   const toggleHabit = async (habit: Habit & { completedOnSelectedDay?: boolean }) => {
@@ -499,30 +493,11 @@ export default function HabitsPage() {
               <p className="hidden text-xs text-emerald-100 sm:block">Track your routines separate from workouts.</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link className="btn btn-secondary h-10 w-10 p-0 text-sm leading-none" href="/dashboard" title="Back to workouts">
-                ≡
+              <Link className="btn btn-secondary w-auto text-xs sm:text-sm" href="/dashboard" title="Go to workout">
+                Go to workout
               </Link>
-              <button className="btn btn-secondary h-10 w-auto px-4" onClick={logout} title="Logout">
+               <button className="btn btn-secondary w-auto text-xs sm:text-sm" onClick={logout} title="Logout">
                 Logout
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-32 overflow-hidden rounded-full bg-emerald-200/60">
-                <div
-                  className="h-full rounded-full bg-white transition-smooth"
-                  style={{ width: `${habitProgress}%` }}
-                ></div>
-              </div>
-              <span className="text-xs font-semibold text-white">{habitProgress}% complete</span>
-            </div>
-            <div className="flex flex-1 justify-end">
-              <button
-                className="btn btn-secondary px-2 py-1 text-[10px] sm:px-3 sm:py-2 sm:text-sm"
-                onClick={() => setShowHabitForm(true)}
-              >
-                Add habit
               </button>
             </div>
           </div>
@@ -535,7 +510,7 @@ export default function HabitsPage() {
             <div>
               <h2 className="text-base font-semibold md:text-lg">Your daily checklist</h2>
                 <p className="text-xs-muted mt-1 text-xs">
-                  Build consistent routines with quick check-ins for any target aim.
+                  Track daily habits by marking them complete each day and watch your progress over time.
                 </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -585,12 +560,6 @@ export default function HabitsPage() {
                       </button>
                       <div>
                         <p className="text-sm font-semibold">{habit.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {habit.completedOnSelectedDay ? `Completed on ${selectedDayLabel}` : "Not completed"}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {(selectedPeriodHabits.find((item) => item.id === habit.id) as Habit & { periodCompletionCount?: number })?.periodCompletionCount || 0} completions in {selectedPeriodLabel().toLowerCase()}
-                        </p>
                       </div>
                     </div>
                     <button
@@ -606,68 +575,118 @@ export default function HabitsPage() {
             </div>
           )}
 
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <button className="btn btn-secondary h-10 w-auto px-4 text-xs sm:tex" onClick={() => setShowHabitForm(true)}>
+              Add habit
+            </button>
+          </div>
+
           <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Monthly progress
-                </p>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {selectedMonthDate
-                    ? selectedMonthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })
-                    : "Select a month"}
-                </h3>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Monthly progress
+                  </p>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {selectedMonthDate
+                      ? selectedMonthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+                      : "Select a month"}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap items-start gap-2 sm:gap-3">
+                  <input
+                    aria-label="Select month"
+                    className="btn btn-secondary h-9 px-3 text-xs sm:text-sm"
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                  />
+                </div>
               </div>
-              <input
-                aria-label="Select month"
-                className="btn btn-secondary h-9 px-3 text-xs sm:text-sm"
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              />
-            </div>
             {selectedMonthSeries.length === 0 ? (
               <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Pick a month to see completion trends.</p>
             ) : (
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                  Click a bar to see the progress on that day
+                </p>
                 <div className="flex gap-3">
-                  <div className="relative h-32 w-10 shrink-0">
-                    {selectedMonthTicks.map((tick) => (
-                      <span
-                        key={`tick-${tick}`}
-                        className="absolute right-0 -translate-y-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400"
-                        style={{ top: `${(1 - tick / selectedMonthMax) * 100}%` }}
-                      >
-                        {tick}
-                      </span>
-                    ))}
-                  </div>
+                  <div className="relative h-24 w-4 shrink-0"></div>
 
-                  <div className="relative h-32 flex-1 overflow-x-auto">
-                    <div className="relative h-32 min-w-[500px] pr-2 sm:min-w-[720px]">
-                      {selectedMonthTicks.map((tick) => (
-                        <div
-                          key={`grid-${tick}`}
-                          className="absolute left-0 right-0 border-t border-slate-200 dark:border-slate-700"
-                          style={{ top: `${(1 - tick / selectedMonthMax) * 100}%` }}
-                        ></div>
-                      ))}
+                  <div className="flex-1 overflow-x-auto">
+                    <div className="relative min-w-[500px] pr-2 sm:min-w-[720px]">
+                      {/* chart area: fixed height, bars grow upward from the bottom */}
+                      <div className="relative w-full" style={{ height: `${chartHeight}px` }}>
+                        {selectedMonthTicks.map((tick) => (
+                          <div
+                            key={`grid-${tick}`}
+                            className="absolute left-0 right-0 border-t border-slate-200 dark:border-slate-700"
+                            style={{ top: `${(1 - tick / selectedMonthMax) * 100}%` }}
+                          ></div>
+                        ))}
+                        <div className="absolute inset-0 flex items-end" style={{ gap: '3px' }}>
+                          {selectedMonthSeries.map((item) => {
+                            const pct = item.count / Math.max(selectedMonthMax, 1);
+                            const barH = Math.max(6, pct * chartHeight);
+                            const isSelected = selectedMonthDate
+                              ? selectedDay ===
+                                toDateInputValue(
+                                  new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), item.day)
+                                )
+                              : false;
+                            return (
+                              <div
+                                key={`col-${item.day}`}
+                                className="relative flex flex-1 flex-col items-center justify-end"
+                                style={{ height: "100%" }}
+                              >
+                                {item.count > 0 && (
+                                  <span className="mb-0.5 text-[9px] font-semibold leading-none text-slate-600 dark:text-slate-300">
+                                    {item.count}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  className={`w-full rounded-sm border border-transparent transition-smooth ${
+                                    isSelected
+                                      ? "bg-slate-400 border-slate-500/60 ring-2 ring-slate-200 dark:bg-slate-500 dark:border-slate-400 dark:ring-slate-400"
+                                      : item.count === 0
+                                        ? "bg-emerald-200 hover:bg-emerald-300"
+                                        : "bg-emerald-400 hover:bg-emerald-500"
+                                  }`}
+                                  style={{ height: `${barH}px` }}
+                                  onClick={() => {
+                                    if (!selectedMonthDate) {
+                                      return;
+                                    }
 
-                      <div className="absolute inset-0 flex items-end gap-2">
+                                    const nextDate = new Date(
+                                      selectedMonthDate.getFullYear(),
+                                      selectedMonthDate.getMonth(),
+                                      item.day
+                                    );
+                                    setSelectedDay(toDateInputValue(nextDate));
+                                  }}
+                                  aria-pressed={isSelected}
+                                  title={`Day ${item.day}: ${item.count} habits completed`}
+                                ></button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* x-axis day labels */}
+                        <div className="flex w-full items-start" style={{ gap: '3px' }}>
                         {selectedMonthSeries.map((item) => (
-                          <div key={`month-day-${item.day}`} className="flex flex-col items-center gap-1">
-                            <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
-                              {item.count}
-                            </span>
-                            <div
-                              className="w-3 rounded-md border border-black bg-slate-300 shadow-sm sm:w-4 dark:border-slate-200 dark:bg-slate-600"
-                              style={{
-                                height: `${Math.max(8, (item.count / Math.max(selectedMonthMax, 1)) * 120)}px`,
-                              }}
-                              title={`Day ${item.day}: ${item.count} habits completed`}
-                            ></div>
+                          <div key={`label-${item.day}`} className="flex flex-1 justify-center">
                             {item.day % 5 === 0 ? (
-                              <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{item.day}</span>
+                                <div className="flex flex-col items-center">
+                                  <span className="h-px w-3 bg-slate-300 dark:bg-slate-600"></span>
+                                  <span className="mt-1 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                                    {item.day}
+                                  </span>
+                                </div>
                             ) : null}
                           </div>
                         ))}

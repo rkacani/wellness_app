@@ -49,7 +49,6 @@ create table if not exists public.habits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   name text not null,
-  target_aim text not null default 'daily' check (target_aim in ('daily','weekly','monthly','custom')),
   completed_at timestamptz,
   created_at timestamptz not null default now()
 );

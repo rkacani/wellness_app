@@ -4,7 +4,6 @@ import { getSupabaseService } from "@/src/lib/supabase-server";
 type HabitRow = {
   id: string;
   name: string;
-  target_aim: string;
   completed_at: string | null;
   created_at: string;
 };
@@ -26,7 +25,7 @@ export async function GET(req: Request) {
     const [{ data, error }, completionsResult] = await Promise.all([
       supabase
         .from("habits")
-        .select("id, name, target_aim, completed_at, created_at")
+        .select("id, name, completed_at, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: true }),
       supabase
@@ -49,7 +48,6 @@ export async function GET(req: Request) {
     const payload = (data || []).map((habit: HabitRow) => ({
       id: habit.id,
       name: habit.name,
-      targetAim: habit.target_aim,
       completedAt: habit.completed_at,
       createdAt: habit.created_at,
       completionCount: completionCounts[habit.id] || 0,
@@ -70,22 +68,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const userId = body?.userId as string | undefined;
     const name = body?.name as string | undefined;
-    const targetAim = (body?.targetAim as string | undefined)?.trim().toLowerCase() || "daily";
-
     if (!userId || !name?.trim()) {
       return NextResponse.json({ error: "userId and name are required" }, { status: 400 });
-    }
-
-    const allowedTargetAims = new Set(["daily", "weekly", "monthly", "custom"]);
-    if (!allowedTargetAims.has(targetAim)) {
-      return NextResponse.json({ error: "Invalid targetAim" }, { status: 400 });
     }
 
     const supabase = getSupabaseService();
     const { data, error } = await supabase
       .from("habits")
-      .insert({ user_id: userId, name: name.trim(), target_aim: targetAim })
-      .select("id, name, target_aim, completed_at, created_at")
+      .insert({ user_id: userId, name: name.trim() })
+      .select("id, name, completed_at, created_at")
       .single();
 
     if (error) {
@@ -96,7 +87,6 @@ export async function POST(req: Request) {
       {
         id: data.id,
         name: data.name,
-        targetAim: data.target_aim,
         completedAt: data.completed_at,
         createdAt: data.created_at,
         completionCount: 0,
