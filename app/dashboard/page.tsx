@@ -53,6 +53,12 @@ type AuthUser = {
   email: string;
 };
 
+type Habit = {
+  id: string;
+  name: string;
+  completedAt: string | null;
+};
+
 const DAYS: DayName[] = [
   "Monday",
   "Tuesday",
@@ -158,6 +164,10 @@ export default function DashboardPage() {
   const [weightKg, setWeightKg] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [editingExerciseId, setEditingExerciseId] = React.useState<string | null>(null);
+
+  const [habits, setHabits] = React.useState<Habit[]>([]);
+  const [habitName, setHabitName] = React.useState("");
+  const [showHabitForm, setShowHabitForm] = React.useState(false);
 
   const [nextExerciseIndex, setNextExerciseIndex] = React.useState(0);
   const [session, setSession] = React.useState<SessionState | null>(null);
@@ -532,7 +542,7 @@ export default function DashboardPage() {
     }
 
     const created = (await res.json()) as Habit;
-    setHabits((prev) => [...prev, created]);
+    setHabits((prev: Habit[]) => [...prev, created]);
     setHabitName("");
     setShowHabitForm(false);
   };
@@ -554,7 +564,7 @@ export default function DashboardPage() {
     }
 
     const updated = (await res.json()) as Habit;
-    setHabits((prev) => prev.map((item) => (item.id === habit.id ? updated : item)));
+    setHabits((prev: Habit[]) => prev.map((item: Habit) => (item.id === habit.id ? updated : item)));
   };
 
   const handleDeleteHabit = async (habit: Habit) => {
@@ -572,7 +582,7 @@ export default function DashboardPage() {
       return;
     }
 
-    setHabits((prev) => prev.filter((item) => item.id !== habit.id));
+    setHabits((prev: Habit[]) => prev.filter((item: Habit) => item.id !== habit.id));
   };
 
   const handleEditExercise = (exercise: Exercise) => {

@@ -1,6 +1,9 @@
 --This SQL script sets up the database schema for a workout application, including tables for week programs and exercises, as well as row-level security policies to ensure that users can only access their own data.
 
-create extension if not exists pgcrypto;
+create
+
+
+extension if not exists pgcrypto;
 
 create table if not exists public.week_programs (
   id uuid primary key default gen_random_uuid(),
