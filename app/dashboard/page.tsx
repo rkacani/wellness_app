@@ -833,7 +833,7 @@ export default function DashboardPage() {
           <div className="h-[calc(100vh-2rem)] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
               <div>
-                <p className="text-xs tracking-wide text-slate-500 font-normal">Add exercise</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300">Add Exercise</p>
                 <h3 className="text-base font-semibold">{selectedDay}</h3>
               </div>
             </div>
@@ -860,7 +860,7 @@ export default function DashboardPage() {
                       </option>
                     ))}
                   </select>
-                  <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 sm:h-20">
+                  <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-400 bg-slate-50 p-2 text-xs font-medium text-slate-600 dark:border-slate-500 dark:bg-slate-800/60 dark:text-slate-300 sm:h-20">
                     {exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ? (
                       <img
                         src={exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ?? ""}
@@ -975,18 +975,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-        <div className="mt-5 flex gap-2 justify-end">
-            <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
-                Cancel
-            </button>
+            <div className="mt-5 flex gap-2">
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddOrUpdateExercise}
                 disabled={!selectedProgram}
               >
-                {editingExerciseId ? "Update exercise" : "Add exercise"}
+                {editingExerciseId ? "Update Exercise" : "Add Exercise"}
               </button>
-        </div>
+              <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -999,17 +999,14 @@ export default function DashboardPage() {
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
             <div className="flex items-center gap-2">
-            <Link className="btn btn-secondary h-10 w-10 flex items-center justify-center p-0" href="/profile" title="Edit profile">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-            </Link>
-              <Link className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm" href="/habits" title="Go to habits">
+              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/habits" title="Go to habits">
                 Go to habits
               </Link>
+              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
+                Profile
+              </Link>
               <button
-                className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm"
+                className="btn btn-secondary w-auto text-xs sm:text-sm"
                 onClick={logout}
                 title="Logout"
               >
@@ -1019,10 +1016,10 @@ export default function DashboardPage() {
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
-              <span className="text-sm font-medium text-sky-100 sm:text-base">Select program:</span>
+              <span className="text-xs font-medium text-sky-100">Select program:</span>
               {programs.length > 0 ? (
                 <select
-                  className="form-select min-w-[200px] text-sm sm:text-base"
+                  className="form-select min-w-[180px] text-xs sm:text-sm"
                   value={selectedProgram?.id ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -1218,11 +1215,13 @@ export default function DashboardPage() {
                       </div>
                       );
                     })}
-                    <div className="flex justify-center">
-                        <button className="btn btn-secondary text-xs sm:text-sm" onClick={openNewExerciseForm} disabled={!selectedProgram}>
-                            Add exercise
-                        </button>
-                    </div>
+                    <button
+                      className="btn btn-secondary w-full text-xs sm:text-sm"
+                      onClick={openNewExerciseForm}
+                      disabled={!selectedProgram}
+                    >
+                      + Add exercise
+                    </button>
                     {dayExercises.length > 0 && (
                       <div className="mt-3 flex gap-2">
                         <button
