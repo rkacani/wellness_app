@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { User } from "lucide-react";
 
 type DayName =
   | "Monday"
@@ -998,12 +999,12 @@ export default function DashboardPage() {
               <h1 className="text-lg font-bold md:text-2xl">Workout Dashboard</h1>
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
-            <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                          <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
+                              <User size={14} />
+                          </Link>
                           <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm whitespace-nowrap" href="/habits" title="Go to habits">
                 Go to habits
-              </Link>
-              <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
-                Profile
               </Link>
               <button
                 className="btn btn-secondary w-auto text-xs sm:text-sm"
