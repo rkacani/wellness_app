@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { User } from "lucide-react";
 
 type DayName =
   | "Monday"
@@ -772,16 +773,16 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex gap-2">
+        <div className="mt-5 flex gap-2 justify-end">
+            <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowProgramForm(false)}>
+                Cancel
+            </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddProgram}
                 disabled={!newProgramName.trim()}
               >
                 Create Program
-              </button>
-              <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowProgramForm(false)}>
-                Cancel
               </button>
             </div>
           </div>
@@ -813,16 +814,16 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex gap-2">
+                      <div className="mt-5 flex gap-2 justify-end">
+                          <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowRenameProgramForm(false)}>
+                              Cancel
+                          </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleRenameProgram}
                 disabled={!selectedProgram || !renameProgramName.trim() || renameProgramName === selectedProgram?.name}
               >
                 Rename program
-              </button>
-              <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowRenameProgramForm(false)}>
-                Cancel
               </button>
             </div>
           </div>
@@ -833,7 +834,7 @@ export default function DashboardPage() {
           <div className="h-[calc(100vh-2rem)] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
               <div>
-                <p className="text-xs tracking-wide text-slate-500 font-normal">Add exercise</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300">Add exercise</p>
                 <h3 className="text-base font-semibold">{selectedDay}</h3>
               </div>
             </div>
@@ -860,7 +861,7 @@ export default function DashboardPage() {
                       </option>
                     ))}
                   </select>
-                  <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 sm:h-20">
+                  <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-400 bg-slate-50 p-2 text-xs font-medium text-slate-600 dark:border-slate-500 dark:bg-slate-800/60 dark:text-slate-300 sm:h-20">
                     {exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ? (
                       <img
                         src={exerciseTypes.find((item) => item.id === selectedExerciseTypeId)?.mediaUrl ?? ""}
@@ -975,10 +976,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-        <div className="mt-5 flex gap-2 justify-end">
-            <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
-                Cancel
-            </button>
+                      <div className="mt-5 flex gap-2 justify-end">
+                          <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
+                              Cancel
+                          </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddOrUpdateExercise}
@@ -986,7 +987,7 @@ export default function DashboardPage() {
               >
                 {editingExerciseId ? "Update exercise" : "Add exercise"}
               </button>
-        </div>
+            </div>
           </div>
         </div>
       )}
@@ -998,18 +999,15 @@ export default function DashboardPage() {
               <h1 className="text-lg font-bold md:text-2xl">Workout Dashboard</h1>
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
-            <div className="flex items-center gap-2">
-            <Link className="btn btn-secondary h-10 w-10 flex items-center justify-center p-0" href="/profile" title="Edit profile">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-            </Link>
-              <Link className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm" href="/habits" title="Go to habits">
+                      <div className="flex items-center gap-2">
+                          <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
+                              <User size={14} />
+                          </Link>
+                          <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm whitespace-nowrap" href="/habits" title="Go to habits">
                 Go to habits
               </Link>
               <button
-                className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm"
+                className="btn btn-secondary w-auto text-xs sm:text-sm"
                 onClick={logout}
                 title="Logout"
               >
@@ -1019,10 +1017,10 @@ export default function DashboardPage() {
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
-              <span className="text-sm font-medium text-sky-100 sm:text-base">Select program:</span>
+              <span className="text-xs font-medium text-sky-100">Select program:</span>
               {programs.length > 0 ? (
                 <select
-                  className="form-select min-w-[200px] text-sm sm:text-base"
+                  className="form-select min-w-[180px] text-xs sm:text-sm"
                   value={selectedProgram?.id ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -1141,26 +1139,9 @@ export default function DashboardPage() {
                             ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                             : "border-slate-200 dark:border-slate-700"
                         }`}
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="flex flex-1 items-start gap-2">
-                              <div className="flex flex-col gap-1 pt-1">
-                                <button
-                                  className="btn btn-secondary px-1.5 py-1 text-[10px]"
-                                  onClick={() => moveExercise(index, -1)}
-                                  aria-label="Move up"
-                                >
-                                  ↑
-                                </button>
-                                <button
-                                  className="btn btn-secondary px-1.5 py-1 text-[10px]"
-                                  onClick={() => moveExercise(index, 1)}
-                                  aria-label="Move down"
-                                >
-                                  ↓
-                                </button>
-                              </div>
-                              <div className="flex-1">
+                          >
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">#{index + 1}</p>
                             <h4 className="mt-1 font-semibold">{exercise.name}</h4>
                             <p className="text-xs-muted mt-1">
@@ -1170,32 +1151,50 @@ export default function DashboardPage() {
                             {exercise.weightKg != null && (
                               <p className="text-xs-muted">{exercise.weightKg} kg</p>
                             )}
-                              {demoUrl && (
-                                <div className="mt-3 flex justify-center">
-                                  <img
+                        {demoUrl && (
+                            <div className="mt-3 flex justify-center">
+                                <img
                                     src={demoUrl}
                                     alt={exercise.exerciseTypeName ?? "Exercise demo"}
                                     className="h-28 w-44 rounded-md object-contain sm:h-32 sm:w-52"
-                                  />
-                                </div>
-                              )}
-                            {exercise.notes && <p className="mt-2 text-xs">{exercise.notes}</p>}
-                              </div>
-                          </div>
-
-                          <div className="absolute right-2 top-2 flex gap-1">
-                            <button
-                              className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
-                              onClick={() => handleEditExercise(exercise)}
-                            >
-                              ✎
-                            </button>
-                            <button
-                              className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
-                              onClick={() => handleDeleteExercise(exercise.id, exercise.name)}
-                            >
-                              ✕
-                            </button>
+                                />
+                                          </div>
+                        )}
+                                      {exercise.notes && <p className="mt-2 text-xs">{exercise.notes}</p>}
+                        </div>
+                        <div className="flex flex-col items-center gap-1 shrink-0">
+                            <div className="flex gap-1">
+                                <button
+                                    className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
+                                    onClick={() => handleEditExercise(exercise)}
+                                    aria-label="Edit exercise"
+                                >
+                                    ✎
+                                </button>
+                                <button
+                                    className="btn btn-secondary h-7 w-7 p-0 text-[11px]"
+                                    onClick={() => handleDeleteExercise(exercise.id, exercise.name)}
+                                    aria-label="Delete exercise"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <button
+                                    className="btn btn-secondary px-1.5 py-1 text-[10px]"
+                                    onClick={() => moveExercise(index, -1)}
+                                    aria-label="Move up"
+                                >
+                                    ↑
+                                </button>
+                                <button
+                                    className="btn btn-secondary px-1.5 py-1 text-[10px]"
+                                    onClick={() => moveExercise(index, 1)}
+                                    aria-label="Move down"
+                                >
+                                    ↓
+                                </button>
+                            </div>
                           </div>
                         </div>
 
@@ -1218,11 +1217,15 @@ export default function DashboardPage() {
                       </div>
                       );
                     })}
-                    <div className="flex justify-center">
-                        <button className="btn btn-secondary text-xs sm:text-sm" onClick={openNewExerciseForm} disabled={!selectedProgram}>
-                            Add exercise
-                        </button>
-                    </div>
+                <div className="flex justify-center">
+                    <button
+                        className="btn btn-secondary text-xs sm:text-sm mx-auto"
+                        onClick={openNewExerciseForm}
+                        disabled={!selectedProgram}
+                    >
+                        Add exercise
+                    </button>
+                </div>
                     {dayExercises.length > 0 && (
                       <div className="mt-3 flex gap-2">
                         <button

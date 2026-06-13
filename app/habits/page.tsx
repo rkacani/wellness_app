@@ -470,16 +470,16 @@ export default function HabitsPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex gap-2">
+        <div className="mt-5 flex gap-2 justify-end">
+            <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowHabitForm(false)}>
+                Cancel
+            </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddHabit}
                 disabled={!habitName.trim()}
               >
                 Add habit
-              </button>
-              <button className="btn btn-secondary text-xs sm:text-sm" onClick={() => setShowHabitForm(false)}>
-                Cancel
               </button>
             </div>
           </div>
