@@ -833,7 +833,7 @@ export default function DashboardPage() {
           <div className="h-[calc(100vh-2rem)] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add Exercise</p>
+                <p className="text-xs tracking-wide text-slate-500 font-normal">Add exercise</p>
                 <h3 className="text-base font-semibold">{selectedDay}</h3>
               </div>
             </div>
@@ -975,18 +975,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex gap-2">
+        <div className="mt-5 flex gap-2 justify-end">
+            <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
+                Cancel
+            </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddOrUpdateExercise}
                 disabled={!selectedProgram}
               >
-                {editingExerciseId ? "Update Exercise" : "Add Exercise"}
+                {editingExerciseId ? "Update exercise" : "Add exercise"}
               </button>
-              <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
-                Cancel
-              </button>
-            </div>
+        </div>
           </div>
         </div>
       )}
@@ -1019,10 +1019,10 @@ export default function DashboardPage() {
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
-              <span className="text-xs font-medium text-sky-100">Select program:</span>
+              <span className="text-sm font-medium text-sky-100 sm:text-base">Select program:</span>
               {programs.length > 0 ? (
                 <select
-                  className="form-select min-w-[180px] text-xs sm:text-sm"
+                  className="form-select min-w-[200px] text-sm sm:text-base"
                   value={selectedProgram?.id ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -1218,13 +1218,11 @@ export default function DashboardPage() {
                       </div>
                       );
                     })}
-                    <button
-                      className="btn btn-secondary w-full text-xs sm:text-sm"
-                      onClick={openNewExerciseForm}
-                      disabled={!selectedProgram}
-                    >
-                      + Add exercise
-                    </button>
+                    <div className="flex justify-center">
+                        <button className="btn btn-secondary text-xs sm:text-sm" onClick={openNewExerciseForm} disabled={!selectedProgram}>
+                            Add exercise
+                        </button>
+                    </div>
                     {dayExercises.length > 0 && (
                       <div className="mt-3 flex gap-2">
                         <button
