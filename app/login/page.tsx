@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [message, setMessage] = React.useState<string | null>(null);
   const [messageType, setMessageType] = React.useState<ErrorType>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showForgot, setShowForgot] = React.useState(false);
+  const [forgotEmail, setForgotEmail] = React.useState("");
+  const [forgotLoading, setForgotLoading] = React.useState(false);
 
   const getErrorMessage = (code: string, defaultMsg: string): string => {
     const errorMap: Record<string, string> = {
@@ -25,6 +28,37 @@ export default function LoginPage() {
       SERVER_ERROR: 'Something went wrong on our end. Please try again later.',
     };
     return errorMap[code] || defaultMsg;
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    setForgotLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.toLowerCase() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Failed to send reset email.");
+        setMessageType("error");
+      } else {
+        setMessage("Check your inbox — we sent you a password reset link.");
+        setMessageType("success");
+        setShowForgot(false);
+        setForgotEmail("");
+      }
+    } catch {
+      setMessage("Network error. Please check your connection and try again.");
+      setMessageType("error");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,7 +134,16 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <div className="flex items-center justify-between">
+              <label className="form-label">Password</label>
+              <button
+                type="button"
+                onClick={() => { setShowForgot(true); setMessage(null); }}
+                className="text-xs text-sky-500 hover:underline focus:outline-none"
+              >
+                Forgot password?
+              </button>
+            </div>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -120,6 +163,38 @@ export default function LoginPage() {
             {isLoading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
+
+        {showForgot && (
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <p className="text-sm font-medium mb-3">Reset your password</p>
+            <form onSubmit={handleForgotPassword} className="space-y-3">
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  type="email"
+                  placeholder="you@example.com"
+                  className="form-input"
+                  required
+                  disabled={forgotLoading}
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" disabled={forgotLoading} className="btn btn-primary flex-1">
+                  {forgotLoading ? 'Sending…' : 'Send reset link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(false); setForgotEmail(""); }}
+                  className="btn flex-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {message && (
           <div className={`alert mt-4 ${
