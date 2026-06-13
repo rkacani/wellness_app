@@ -833,7 +833,7 @@ export default function DashboardPage() {
           <div className="h-[calc(100vh-2rem)] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300">Add Exercise</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300">Add exercise</p>
                 <h3 className="text-base font-semibold">{selectedDay}</h3>
               </div>
             </div>
@@ -975,16 +975,16 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex gap-2">
+                      <div className="mt-5 flex gap-2 justify-end">
+                          <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
+                              Cancel
+                          </button>
               <button
                 className="btn btn-secondary text-xs sm:text-sm"
                 onClick={handleAddOrUpdateExercise}
                 disabled={!selectedProgram}
               >
-                {editingExerciseId ? "Update Exercise" : "Add Exercise"}
-              </button>
-              <button className="btn btn-secondary text-xs sm:text-sm" onClick={resetExerciseForm}>
-                Cancel
+                {editingExerciseId ? "Update exercise" : "Add exercise"}
               </button>
             </div>
           </div>
@@ -999,10 +999,10 @@ export default function DashboardPage() {
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/habits" title="Go to habits">
+                          <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm whitespace-nowrap" href="/habits" title="Go to habits">
                 Go to habits
               </Link>
-              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
+              <Link className="btn btn-secondary h-5 w-auto px-4 text-xs sm:text-sm" href="/profile" title="Edit profile">
                 Profile
               </Link>
               <button
@@ -1215,13 +1215,15 @@ export default function DashboardPage() {
                       </div>
                       );
                     })}
+                <div className="flex justify-center">
                     <button
-                      className="btn btn-secondary w-full text-xs sm:text-sm"
-                      onClick={openNewExerciseForm}
-                      disabled={!selectedProgram}
+                        className="btn btn-secondary text-xs sm:text-sm mx-auto"
+                        onClick={openNewExerciseForm}
+                        disabled={!selectedProgram}
                     >
-                      + Add exercise
+                        Add exercise
                     </button>
+                </div>
                     {dayExercises.length > 0 && (
                       <div className="mt-3 flex gap-2">
                         <button

@@ -187,7 +187,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setShowForgot(false); setForgotEmail(""); }}
-                  className="btn flex-1"
+                                  className="btn btn-primary flex-1 bg-slate-600"
                 >
                   Cancel
                 </button>
