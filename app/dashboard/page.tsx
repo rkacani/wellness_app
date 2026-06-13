@@ -999,11 +999,17 @@ export default function DashboardPage() {
               <p className="hidden text-xs text-sky-100 sm:block">Manage weekly plans & guided timers</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link className="btn btn-secondary h-10 w-auto px-4 text-xs sm:text-sm" href="/habits" title="Go to habits">
+            <Link className="btn btn-secondary h-10 w-10 flex items-center justify-center p-0" href="/profile" title="Edit profile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+            </Link>
+              <Link className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm" href="/habits" title="Go to habits">
                 Go to habits
               </Link>
               <button
-                className="btn btn-secondary w-auto text-xs sm:text-sm"
+                className="btn btn-secondary h-10 w-auto whitespace-nowrap px-4 text-xs flex items-center justify-center sm:text-sm"
                 onClick={logout}
                 title="Logout"
               >
